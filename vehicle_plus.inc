@@ -4,13 +4,14 @@
 #define _VEHICLE_PLUS_included
 
 #include <open.mp>
-
 #include <YSI_Data\y_foreach>
 #include <YSI_Coding\y_timers>
 #include <YSI_Coding\y_hooks>
 #include <YSI_Game\y_vehicledata>
 
 #include <streamer>
+
+#include <errors>
 
 /*
     Since I don't know how to fix the tag mismatch warning,
@@ -28,22 +29,8 @@
 #pragma warning push
 #pragma warning disable 213
 
-/**
- * <library>omp_vehicle</library>
- * <summary>Check if a vehicle ID is valid.</summary>
- * <param name="vehicleid">The ID of the vehicle to check</param>
- * <seealso name="CreateVehicle" />
- * <seealso name="DestroyVehicle" />
- * <returns>true or false.</returns>
- */
-forward bool: IsPlayerInsidePaySpray(playerid);
-
 #if !defined RELEASED
 	#define RELEASED(%0)			(((newkeys & (%0)) != (%0)) && ((oldkeys & (%0)) == (%0)))
-#endif
-
-#if defined EMPTY_DAMAGE 
-    #include <weapon-config>
 #endif
 
 #define VEHICLE_FRAMEWORK_TAGS \
@@ -94,7 +81,8 @@ static
 enum VEHICLE_UNIT:__VEHICLE_UNIT
 {
     VEHICLE_UNIT_METRIC,
-    VEHICLE_UNIT_IMPERIAL
+    VEHICLE_UNIT_IMPERIAL,
+    VEHICLE_UNIT_KILOWATT_HOUR
 }
 static stock VEHICLE_UNIT:_@VEHICLE_UNIT() { return __VEHICLE_UNIT; }
 
@@ -111,6 +99,167 @@ static const Float:Vehicle_gscPayNSprayLocations[10][3] = {
     {2393.74, 1493.01, 10.52} 	// LV Unused (Pyramid)
 };
 
+
+//--
+// Header
+// --
+
+forward Error: Vehicle_GetTrailer(vehicleid, &output);
+
+/**
+ * <library>omp_vehicle</library>
+ * <summary>Check if a vehicle ID is valid.</summary>
+ * <param name="vehicleid">The ID of the vehicle to check</param>
+ * <seealso name="CreateVehicle" />
+ * <seealso name="DestroyVehicle" />
+ * <returns>true or false.</returns>
+ */
+forward bool: IsPlayerInsidePaySpray(playerid);
+
+/**
+ * <library>vehicle_plus</library>
+ * <summary>Gets vehicle fuel tank capacity.</summary>
+ * <param name="vehicleid">Vehicle.</param>
+ * <param name="unit">Unit we get capacity in.</param>
+ * <seealso name="Vehicle_SetFuelTankCapacity" />
+ * <seealso name="Vehicle_SetFuelConsumption" />
+ * <seealso name="Vehicle_GetFuelTankCapacity" />
+ * <seealso name="Vehicle_GetFuelLevel" />
+ * <seealso name="Vehicle_SetFuelLevel" />
+ * <seealso name="Vehicle_GetDistanceCanPass" />
+ * <seealso name="Vehicle_GetDistanceFromLastRefill" />
+ * <returns>INVALID_VEHICLE_ID if vehicle is invalid, tank capacity otherwise.</returns> 
+ */
+forward Error: Vehicle_GetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit, &Float: output);
+
+/**
+ * <library>vehicle_plus</library>
+ * <summary>Called when vehicle has been created.</summary>
+ * <param name="vehicleid">The ID of created vehicle.</param>
+ * <seealso name="Vehicle_Create" />
+ * <seealso name="Vehicle_CreateEx" />
+ * <seealso name="Vehicle_Destroy" />
+ * <seealso name="OnVehicleDestroy" />
+ * <returns>Doesn't return any specific value.</returns>
+ */
+forward OnVehicleFirstSpawn(vehicleid);
+
+/**
+ * <library>vehicle_plus</library>
+ * <summary>Called when vehicle has been destroyed.</summary>
+ * <param name="vehicleid">The ID of destroyed vehicle.</param>
+ * <seealso name="Vehicle_Destroy" />
+ * <seealso name="Vehicle_Create" />
+ * <seealso name="Vehicle_CreateEx" />
+ * <seealso name="OnVehicleFirstSpawn" />
+ * <returns>Doesn't return any specific value.</returns>
+ */
+forward OnVehicleDestroy(vehicleid);
+
+/**
+ * <library>vehicle_plus</library>
+ * <summary>Called when group has been initialized.</summary>
+ * <param name="VehicleGroup: groupid">The ID of initialized group.</param>
+ * <seealso name="Vehicle_GetGroupByName" />
+ * <seealso name="Vehicle_GroupHas" />
+ * <seealso name="Vehicle_GroupInit" />
+ * <seealso name="Vehicle_IsValidGroup" />
+ * <seealso name="Vehicle_AddToGroup" />
+ * <seealso name="Vehicle_RemoveFromGroup" />
+ * <seealso name="Vehicle_IsEmptyGroup" />
+ * <seealso name="Vehicle_GroupDestroy" />
+ * <seealso name="Vehicle_ClearGroup" />
+ * <seealso name="OnGroupAdd" />
+ * <seealso name="OnGroupRemoveMember" />
+ * <seealso name="OnGroupClear" />
+ * <returns>Doesn't return any specific value.</returns>
+ */
+forward OnGroupInitialize(VehicleGroup: groupid);
+
+/**
+ * <library>vehicle_plus</library>
+ * <summary>Called when group has a member added.</summary>
+ * <param name="VehicleGroup: groupid">The ID of group that has member added.</param>
+ * <param name="vehicleid">The ID vehicle that has been added.</param>
+ * <seealso name="Vehicle_GetGroupByName" />
+ * <seealso name="Vehicle_GroupHas" />
+ * <seealso name="Vehicle_GroupInit" />
+ * <seealso name="Vehicle_IsValidGroup" />
+ * <seealso name="Vehicle_AddToGroup" />
+ * <seealso name="Vehicle_RemoveFromGroup" />
+ * <seealso name="Vehicle_IsEmptyGroup" />
+ * <seealso name="Vehicle_GroupDestroy" />
+ * <seealso name="Vehicle_ClearGroup" />
+ * <seealso name="OnGroupInitialize" />
+ * <seealso name="OnGroupRemoveMember" />
+ * <seealso name="OnGroupClear" />
+ * <returns>Doesn't return any specific value.</returns>
+ */
+forward OnGroupAdd(VehicleGroup: groupid, vehicleid);
+
+/**
+ * <library>vehicle_plus</library>
+ * <summary>Called when group has a member removed.</summary>
+ * <param name="VehicleGroup: groupid">The ID of group that has member removed.</param>
+ * <param name="vehicleid">The ID vehicle that has been removed.</param>
+ * <seealso name="Vehicle_GetGroupByName" />
+ * <seealso name="Vehicle_GroupHas" />
+ * <seealso name="Vehicle_GroupInit" />
+ * <seealso name="Vehicle_IsValidGroup" />
+ * <seealso name="Vehicle_AddToGroup" />
+ * <seealso name="Vehicle_RemoveFromGroup" />
+ * <seealso name="Vehicle_IsEmptyGroup" />
+ * <seealso name="Vehicle_GroupDestroy" />
+ * <seealso name="Vehicle_ClearGroup" />
+ * <seealso name="OnGroupInitialize" />
+ * <seealso name="OnGroupAdd" />
+ * <seealso name="OnGroupClear" />
+ * <returns>Doesn't return any specific value.</returns>
+ */
+forward OnGroupRemoveMember(VehicleGroup: groupid, vehicleid);
+
+/**
+ * <library>vehicle_plus</library>
+ * <summary>Called when group has been cleared.</summary>
+ * <param name="VehicleGroup: groupid">The ID of group that has been cleared.</param>
+ * <seealso name="Vehicle_GetGroupByName" />
+ * <seealso name="Vehicle_GroupHas" />
+ * <seealso name="Vehicle_GroupInit" />
+ * <seealso name="Vehicle_IsValidGroup" />
+ * <seealso name="Vehicle_AddToGroup" />
+ * <seealso name="Vehicle_RemoveFromGroup" />
+ * <seealso name="Vehicle_IsEmptyGroup" />
+ * <seealso name="Vehicle_GroupDestroy" />
+ * <seealso name="Vehicle_ClearGroup" />
+ * <seealso name="OnGroupInitialize" />
+ * <seealso name="OnGroupRemoveMember" />
+ * <seealso name="OnGroupAdd" />
+ * <returns>Doesn't return any specific value.</returns>
+ */
+forward OnGroupClear(VehicleGroup: groupid);
+
+forward Error: Vehicle_GetFuelLevel(vehicleid, VEHICLE_UNIT: unit, &Float: output);
+
+/**
+ * <summary>Called when vehicle's health change.</summary>
+ * <param name="vehicleid">Vehicle which health modified.</param>
+ * <param name="oldhealth">Old health.</param>
+ * <param name="newhealth">New health.</param>
+ * <seealso name="Vehicle_SetHealth" />
+ * <seealso name="Vehicle_GetHealth" />
+ * <seealso name="Vehicle_Repair" />
+ * <remarks>Called every 500 milliseconds.</remarks>
+ */
+forward OnVehicleHealthChange(vehicleid, Float: oldhealth, Float:newhealth);
+
+forward OnVehicleDrivenDistanceUpdate(vehicleid);
+
+forward OnTrailerHook(vehicleid, trailerid);
+forward OnTrailerUnhook(vehicleid, trailerid);
+
+forward OnVehiclePaintjobChange(vehicleid, paintjobid);
+
+
 // --
 // Vehicle Info
 // --
@@ -121,7 +270,8 @@ enum DRIVE_TYPE:__DRIVE_TYPE
     DRIVE_INVALID = 0,
     DRIVE_4WD = 1,
     DRIVE_FWD = 2,
-    DRIVE_RWD
+    DRIVE_RWD,
+    DRIVE_MANUAL
 }
 static stock DRIVE_TYPE:_@DRIVE_TYPE() { return __DRIVE_TYPE; }
 
@@ -227,7 +377,7 @@ static const Vehicle_Info[212][e_VEHICLE_INFO] =
     {2, 1850.0, DRIVE_4WD, ENGINE_DIESEL, 3},
     {4, 1500.0, DRIVE_FWD, ENGINE_PETROL, 3},
     {2, 1400.0, DRIVE_4WD, ENGINE_PETROL, 3},
-    {0, 100.0, DRIVE_RWD, ENGINE_PETROL, 0},
+    {0, 100.0, DRIVE_MANUAL, ENGINE_INVALID, 0},
     {4, 1900.0, DRIVE_RWD, ENGINE_PETROL, 3},
     {3, 1900.0, DRIVE_RWD, ENGINE_PETROL, 3},
     {0, 5000.0, DRIVE_RWD, ENGINE_PETROL, 0},
@@ -255,8 +405,8 @@ static const Vehicle_Info[212][e_VEHICLE_INFO] =
     {2, 1400.0, DRIVE_RWD, ENGINE_PETROL, 3},
     {4, 2200.0, DRIVE_RWD, ENGINE_PETROL, 3},
     {3, 3500.0, DRIVE_RWD, ENGINE_DIESEL, 3},
-    {0, 100.0, DRIVE_RWD, ENGINE_PETROL, 0}, 
-    {0, 100.0, DRIVE_RWD, ENGINE_PETROL, 0}, 
+    {0, 100.0, DRIVE_MANUAL, ENGINE_INVALID, 0}, 
+    {0, 100.0, DRIVE_MANUAL, ENGINE_INVALID, 0}, 
     {2, 10000.0, DRIVE_4WD, ENGINE_PETROL, 0}, 
     {1, 5000.0, DRIVE_4WD, ENGINE_PETROL, 0}, 
     {1, 5000.0, DRIVE_4WD, ENGINE_PETROL, 0}, 
@@ -363,9 +513,14 @@ static const Vehicle_Info[212][e_VEHICLE_INFO] =
 /**
  * <summary> Gets vehicle mass</summary>
  */
-stock Float: Vehicle_GetMass(vehicleid) 
+stock Error: Vehicle_GetMass(vehicleid, &Float: mass) 
 {
-    return Vehicle_Info[GetVehicleModel(vehicleid) - 400][E_VEHICLE_MASS];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    mass = Vehicle_Info[GetVehicleModel(vehicleid) - 400][E_VEHICLE_MASS];
+    return Ok()
 }
 
 // --
@@ -386,116 +541,9 @@ static enum PARAMS
 static
     VEHICLE_PARAMS: Vehicle_gsParams[MAX_VEHICLES][PARAMS];
 
-/**
- * <library>vehicle_plus</library>
- * <summary>Called when vehicle has been created.</summary>
- * <param name="vehicleid">The ID of created vehicle.</param>
- * <seealso name="Vehicle_Create" />
- * <seealso name="Vehicle_CreateEx" />
- * <seealso name="Vehicle_Destroy" />
- * <seealso name="OnVehicleDestroy" />
- * <returns>Doesn't return any specific value.</returns>
- */
-forward OnVehicleFirstSpawn(vehicleid);
-
-/**
- * <library>vehicle_plus</library>
- * <summary>Called when vehicle has been destroyed.</summary>
- * <param name="vehicleid">The ID of destroyed vehicle.</param>
- * <seealso name="Vehicle_Destroy" />
- * <seealso name="Vehicle_Create" />
- * <seealso name="Vehicle_CreateEx" />
- * <seealso name="OnVehicleFirstSpawn" />
- * <returns>Doesn't return any specific value.</returns>
- */
-forward OnVehicleDestroy(vehicleid);
-
 // --
 // Groups 
 // --
-
-/**
- * <library>vehicle_plus</library>
- * <summary>Called when group has been initialized.</summary>
- * <param name="VehicleGroup: groupid">The ID of initialized group.</param>
- * <seealso name="Vehicle_GetGroupByName" />
- * <seealso name="Vehicle_GroupHas" />
- * <seealso name="Vehicle_GroupInit" />
- * <seealso name="Vehicle_IsValidGroup" />
- * <seealso name="Vehicle_AddToGroup" />
- * <seealso name="Vehicle_RemoveFromGroup" />
- * <seealso name="Vehicle_IsEmptyGroup" />
- * <seealso name="Vehicle_GroupDestroy" />
- * <seealso name="Vehicle_ClearGroup" />
- * <seealso name="OnGroupAdd" />
- * <seealso name="OnGroupRemoveMember" />
- * <seealso name="OnGroupClear" />
- * <returns>Doesn't return any specific value.</returns>
- */
-forward OnGroupInitialize(VehicleGroup: groupid);
-
-/**
- * <library>vehicle_plus</library>
- * <summary>Called when group has a member added.</summary>
- * <param name="VehicleGroup: groupid">The ID of group that has member added.</param>
- * <param name="vehicleid">The ID vehicle that has been added.</param>
- * <seealso name="Vehicle_GetGroupByName" />
- * <seealso name="Vehicle_GroupHas" />
- * <seealso name="Vehicle_GroupInit" />
- * <seealso name="Vehicle_IsValidGroup" />
- * <seealso name="Vehicle_AddToGroup" />
- * <seealso name="Vehicle_RemoveFromGroup" />
- * <seealso name="Vehicle_IsEmptyGroup" />
- * <seealso name="Vehicle_GroupDestroy" />
- * <seealso name="Vehicle_ClearGroup" />
- * <seealso name="OnGroupInitialize" />
- * <seealso name="OnGroupRemoveMember" />
- * <seealso name="OnGroupClear" />
- * <returns>Doesn't return any specific value.</returns>
- */
-forward OnGroupAdd(VehicleGroup: groupid, vehicleid);
-
-/**
- * <library>vehicle_plus</library>
- * <summary>Called when group has a member removed.</summary>
- * <param name="VehicleGroup: groupid">The ID of group that has member removed.</param>
- * <param name="vehicleid">The ID vehicle that has been removed.</param>
- * <seealso name="Vehicle_GetGroupByName" />
- * <seealso name="Vehicle_GroupHas" />
- * <seealso name="Vehicle_GroupInit" />
- * <seealso name="Vehicle_IsValidGroup" />
- * <seealso name="Vehicle_AddToGroup" />
- * <seealso name="Vehicle_RemoveFromGroup" />
- * <seealso name="Vehicle_IsEmptyGroup" />
- * <seealso name="Vehicle_GroupDestroy" />
- * <seealso name="Vehicle_ClearGroup" />
- * <seealso name="OnGroupInitialize" />
- * <seealso name="OnGroupAdd" />
- * <seealso name="OnGroupClear" />
- * <returns>Doesn't return any specific value.</returns>
- */
-forward OnGroupRemoveMember(VehicleGroup: groupid, vehicleid);
-
-/**
- * <library>vehicle_plus</library>
- * <summary>Called when group has been cleared.</summary>
- * <param name="VehicleGroup: groupid">The ID of group that has been cleared.</param>
- * <seealso name="Vehicle_GetGroupByName" />
- * <seealso name="Vehicle_GroupHas" />
- * <seealso name="Vehicle_GroupInit" />
- * <seealso name="Vehicle_IsValidGroup" />
- * <seealso name="Vehicle_AddToGroup" />
- * <seealso name="Vehicle_RemoveFromGroup" />
- * <seealso name="Vehicle_IsEmptyGroup" />
- * <seealso name="Vehicle_GroupDestroy" />
- * <seealso name="Vehicle_ClearGroup" />
- * <seealso name="OnGroupInitialize" />
- * <seealso name="OnGroupRemoveMember" />
- * <seealso name="OnGroupAdd" />
- * <returns>Doesn't return any specific value.</returns>
- */
-forward OnGroupClear(VehicleGroup: groupid);
-
 
 #define INVALID_VEHICLE_GROUP_ID 0
 
@@ -523,7 +571,7 @@ static
  * <seealso name="OnGroupClear" />
  * <returns>Returns -1 if name is NULL, INVALID_VEHICLE_GROUP_ID if there are no groups to match with the name, and group id if there's a group with the specified name.</returns>
 */
-stock VehicleGroup: Vehicle_GetGroupByName(const name[])
+stock Error: Vehicle_GetGroupByName(const name[], &VehicleGroup: output)
 {
     foreach(new i : Vehicle_gsActGps) 
     {
@@ -533,14 +581,15 @@ stock VehicleGroup: Vehicle_GetGroupByName(const name[])
         }
         if(isnull(name))
         {
-            return VehicleGroup: -1;
+            return Error(1, "NULL group name");
         }
         if(!strcmp(name, Vehicle_gsGroupName[VehicleGroup: i])) 
         {
-            return VehicleGroup: i;
+            output = VehicleGroup: i;
+            return Ok();
         }
     }
-    return VehicleGroup: INVALID_VEHICLE_GROUP_ID;
+    return Error(2, "Invalid vehicle group");
 }
 
 /**
@@ -588,7 +637,7 @@ stock bool: Vehicle_GroupHas(VehicleGroup: groupid, vehicleid)
  * <seealso name="OnGroupClear" />
  * <returns>ID of the group that has been initialized.</returns>
 */
-stock VehicleGroup: Vehicle_GroupInit(const name[]) 
+stock Error: Vehicle_GroupInit(const name[], &VehicleGroup: index) 
 {
     
     if(Iter_IsEmpty(Vehicle_gsActGps))
@@ -596,15 +645,30 @@ stock VehicleGroup: Vehicle_GroupInit(const name[])
         Iter_Add(Vehicle_gsActGps, 0);
     }
     new VehicleGroup: idx = VehicleGroup: Iter_Free(Vehicle_gsActGps);
-    if(Vehicle_GetGroupByName(name) != VehicleGroup: INVALID_VEHICLE_GROUP_ID)
+    new VehicleGroup: output;
+    new Error: ret = Vehicle_GetGroupByName(name, output);
+    if(IsError(ret))
     {
-        return VehicleGroup: INVALID_VEHICLE_GROUP_ID;
+        if(ret == Error: 1)
+        {
+            Handled(true);
+            return Error(2, "NULL group name");
+        }
+        else if(ret == Error: 2)
+        {
+            return Error(1, "Invalid vehicle group");
+        }
+    }
+    if(output != VehicleGroup: INVALID_VEHICLE_GROUP_ID)
+    {
+        return Error(1, "Invalid vehicle group");
     }
     strcopy(Vehicle_gsGroupName[idx], name);
     Iter_Add(Vehicle_gsActGps, _:idx); 
     _Framework_CallLocalFunction("OnGroupInitialize", "i", idx);
 
-    return idx;
+    index = idx;
+    return Ok();
 }
 
 /**
@@ -651,17 +715,25 @@ stock bool: Vehicle_IsValidGroup(VehicleGroup: groupid)
  * <seealso name="OnGroupRemoveMember" />
  * <seealso name="OnGroupAdd" />
  * <seealso name="OnGroupClear" />
- * <returns>Returns INVALID_VEHICLE_GROUP_ID if vehicle or group isn't valid or group already contains the vehicle.</returns>
+ * <returns>Returns error code 1 if vehicle or group isn't valid or 2 if vehicle specified is invalid or 3 if group already contains the vehicle, return 0 on success.</returns>
 */
-stock Vehicle_AddToGroup(VehicleGroup: groupid, vehicleid)
+stock Error: Vehicle_AddToGroup(VehicleGroup: groupid, vehicleid)
 {
-    if(!Vehicle_IsValidGroup(groupid) || !IsValidVehicle(vehicleid) || Iter_Contains(Vehicle_gsGroups[groupid], vehicleid))
+    if(!Vehicle_IsValidGroup(groupid))
     {
-        return INVALID_VEHICLE_GROUP_ID;
+        return Error(1, "Invalid group.");
+    }
+    else if(!IsValidVehicle(vehicleid))
+    {
+        return Error(2, "Invalid vehicle.");
+    }
+    else if(Iter_Contains(Vehicle_gsGroups[groupid], vehicleid))
+    {
+        return Ok(3); // vehicle already has been added
     }
     Iter_Add(Vehicle_gsGroups[groupid], vehicleid);
     _Framework_CallLocalFunction("OnGroupAddMember", "ii", groupid, vehicleid);
-    return true;
+    return Ok();
 }
 
 /**
@@ -681,17 +753,21 @@ stock Vehicle_AddToGroup(VehicleGroup: groupid, vehicleid)
  * <seealso name="OnGroupRemoveMember" />
  * <seealso name="OnGroupAdd" />
  * <seealso name="OnGroupClear" />
- * <returns>False if vehicle or group isn't valid, true otherwise</returns>
+ * <returns>1 if group isn't valid, 2 if vehicle has already been added, 0 on success.</returns>
 */
-stock bool: Vehicle_RemoveFromGroup(VehicleGroup: groupid, vehicleid)
+stock Error: Vehicle_RemoveFromGroup(VehicleGroup: groupid, vehicleid)
 {
-    if(!Vehicle_IsValidGroup(groupid) || !Iter_Contains(Vehicle_gsGroups[groupid], vehicleid))
+    if(!Vehicle_IsValidGroup(groupid))
     {
-        return false;
+        return Error(1, "Invalid group.");
+    }
+    else if(!Iter_Contains(Vehicle_gsGroups[groupid], vehicleid))
+    {
+        return Ok(2); // vehicle already has been added
     }
     Iter_Remove(Vehicle_gsGroups[groupid], vehicleid);
     _Framework_CallLocalFunction("OnGroupRemoveMember", "ii", groupid, vehicleid);
-    return true;
+    return Ok();
 }
 
 /**
@@ -710,20 +786,24 @@ stock bool: Vehicle_RemoveFromGroup(VehicleGroup: groupid, vehicleid)
  * <seealso name="OnGroupRemoveMember" />
  * <seealso name="OnGroupAdd" />
  * <seealso name="OnGroupClear" />
- * <returns>False if vehicle or group isn't valid, true otherwise</returns>
+ * <returns>Error code 1 if group isn't valid, 2 if iterator was already empty, 0 on success.</returns>
 */
-stock bool: Vehicle_ClearGroup(VehicleGroup: groupid)
+stock Error: Vehicle_ClearGroup(VehicleGroup: groupid)
 {
-    if(!Vehicle_IsValidGroup(groupid) || Iter_IsEmpty(Vehicle_gsGroups[groupid]))
+    if(!Vehicle_IsValidGroup(groupid))
     {
-        return false;
+        return Error(1, "Invalid group.")
+    } 
+    else if(Iter_IsEmpty(Vehicle_gsGroups[groupid]))
+    {
+        return Ok(2); // works but iterator was empty already
     }
     foreach(new i : Vehicle_gsGroups[groupid])
     {
         Iter_SafeRemove(Vehicle_gsGroups[groupid], i, i);
     }
     _Framework_CallLocalFunction("OnGroupClear", "i", groupid);
-    return true;
+    return Ok();
 }
 
 /**
@@ -750,11 +830,7 @@ stock bool: Vehicle_IsEmptyGroup(VehicleGroup: groupid)
     {
         return false;
     }
-    else if(Iter_IsEmpty(Vehicle_gsGroups[groupid]))
-    {
-        return true;
-    }
-    return false;
+    return Iter_IsEmpty(Vehicle_gsGroups[groupid]);
 }
 
 /**
@@ -775,19 +851,19 @@ stock bool: Vehicle_IsEmptyGroup(VehicleGroup: groupid)
  * <seealso name="OnGroupClear" />
  * <returns>False if vehicle or group isn't valid, true otherwise</returns>
 */
-stock bool: Vehicle_GroupDestroy(VehicleGroup: groupid)
+stock Error: Vehicle_GroupDestroy(VehicleGroup: groupid)
 {
     if(!Iter_Contains(Vehicle_gsActGps, _:groupid))
     {
-        return false;
+        return Error(1, "Invalid vehicle group");
     }
     foreach(new i : Vehicle_gsGroups[groupid])
     {
         Iter_SafeRemove(Vehicle_gsGroups[groupid], i, i);
     }
     Iter_Remove(Vehicle_gsActGps, _:groupid);
-    return true;
-} 
+    return Ok();
+}
 
 
 // --
@@ -1098,7 +1174,8 @@ stock bool: Vehicle_SetBlinking(VEHICLE_FRAMEWORK_TAGS: vehicleid, VEHICLE_BLINK
                     Vehicle_gsBlink[vehicleid][2] = CreateDynamicObject(19294, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
                 }
             }
-            if((trailer = Vehicle_GetTrailer(vehicleid)) != 0)
+            Vehicle_GetTrailer(vehicleid, trailer);
+            if(trailer != 0)
             {
                 if(Vehicle_GetCategory(trailer) == CATEGORY_TRAILER)
                 {
@@ -1198,7 +1275,7 @@ stock bool: Vehicle_CancelBlinking(VEHICLE_FRAMEWORK_TAGS: id, tag=(tagof(id)))
     {
         if(!Vehicle_IsBlinking(id)) 
         {
-            return false;
+            return Error(1, "Vehicle is not blinking");
         }
 
         for(new i; i < BLINK_SIDES; i++)
@@ -1232,13 +1309,12 @@ stock bool: Vehicle_CancelBlinking(VEHICLE_FRAMEWORK_TAGS: id, tag=(tagof(id)))
             }
         }
     }
-    return true;
+    return Ok(0);
 }
 
 // -- 
 // Engine 
 // --
-forward Float: Vehicle_GetFuelLevel(vehicleid, VEHICLE_UNIT: unit);
 /**
  * <library>vehicle_plus</library>
  * <summary> Gets the engine state.</summary>
@@ -1248,9 +1324,14 @@ forward Float: Vehicle_GetFuelLevel(vehicleid, VEHICLE_UNIT: unit);
  * <seealso name="Vehicle_GetEngineType" />
  * <returns> Returns VEHICLE_PARAMS_ON if engine is turned on, otherwise VEHICLE_PARAMS_OFF including invalid vehicle. </returns>
  */
-stock VEHICLE_PARAMS: Vehicle_GetEngineState(vehicleid) 
+stock Error: Vehicle_GetEngineState(vehicleid, &VEHICLE_PARAMS: output) 
 {
-    return Vehicle_gsParams[vehicleid][PARAMS_ENGINE];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_gsParams[vehicleid][PARAMS_ENGINE];
+    return Ok();
 }
 
 /**
@@ -1263,13 +1344,13 @@ stock VEHICLE_PARAMS: Vehicle_GetEngineState(vehicleid)
  * <seealso name="Vehicle_GetEngineType" />
  * <returns> SetVehicleParamsEx values. </returns>
 */
-stock bool: Vehicle_SetEngineState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: engine_state, tag=tagof(id)) 
+stock Error: Vehicle_SetEngineState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: engine_state, tag=tagof(id)) 
 {
     if(tag==tagof(_:))
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsParams[id][PARAMS_ENGINE] = engine_state;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -1282,7 +1363,7 @@ stock bool: Vehicle_SetEngineState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: e
             SetVehicleParamsEx(i, Vehicle_gsParams[i][PARAMS_ENGINE], Vehicle_gsParams[i][PARAMS_LIGHTS], Vehicle_gsParams[i][PARAMS_ALARM], Vehicle_gsParams[i][PARAMS_DOORS], Vehicle_gsParams[i][PARAMS_BONNET], Vehicle_gsParams[i][PARAMS_BOOT], Vehicle_gsParams[i][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -1294,13 +1375,19 @@ stock bool: Vehicle_SetEngineState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: e
  * <seealso name="Vehicle_GetEngineType" />
  * <returns> False if vehicle is invalid, or doesn't have enough fuel, true otherwise.</returns>
 */
-stock Vehicle_TryTurningEngine(VEHICLE_FRAMEWORK_TAGS: id, tag=tagof(id))
+stock Error: Vehicle_TryTurningEngine(VEHICLE_FRAMEWORK_TAGS: id, tag=tagof(id))
 {
     if(tag==tagof(_:))
     {
-        if(!IsValidVehicle(id) || Vehicle_GetFuelLevel(id, VEHICLE_UNIT_METRIC) == 0)
+        new fuel_data;
+        if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle.");
+        }
+        Vehicle_GetFuelLevel(id, VEHICLE_UNIT_METRIC, fuel_data);
+        if(fuel_data == 0)
+        {
+            return Error(2, "No fuel.");
         }
         Vehicle_gsParams[id][PARAMS_ENGINE] = true;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -1309,7 +1396,9 @@ stock Vehicle_TryTurningEngine(VEHICLE_FRAMEWORK_TAGS: id, tag=tagof(id))
     {
         foreach(new i : Vehicle_gsGroups[VehicleGroup: id])
         {
-            if(Vehicle_GetFuelLevel(i, VEHICLE_UNIT_METRIC) == 0)
+            new fuel_data;
+            Vehicle_GetFuelLevel(i, VEHICLE_UNIT_METRIC, fuel_data);
+            if(fuel_data == 0)
             {
                 continue;
             }
@@ -1317,7 +1406,7 @@ stock Vehicle_TryTurningEngine(VEHICLE_FRAMEWORK_TAGS: id, tag=tagof(id))
             SetVehicleParamsEx(i, Vehicle_gsParams[i][PARAMS_ENGINE], Vehicle_gsParams[i][PARAMS_LIGHTS], Vehicle_gsParams[i][PARAMS_ALARM], Vehicle_gsParams[i][PARAMS_DOORS], Vehicle_gsParams[i][PARAMS_BONNET], Vehicle_gsParams[i][PARAMS_BOOT], Vehicle_gsParams[i][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -1327,12 +1416,17 @@ stock Vehicle_TryTurningEngine(VEHICLE_FRAMEWORK_TAGS: id, tag=tagof(id))
  * <seealso name="Vehicle_GetEngineState" />
  * <seealso name="Vehicle_SetEngineState" />
  * <seealso name="Vehicle_GetEngineType" />
- * <returns>Vehicle drive type. 0 if vehicle is not created.</returns>
+ * <returns>Vehicle drive type. DRIVE_INVALID if vehicle is not created.</returns>
  */
-stock DRIVE_TYPE: Vehicle_GetDriveType(vehicleid) 
+stock Error: Vehicle_GetDriveType(vehicleid, &DRIVE_TYPE: output) 
 {
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
     new model = GetVehicleModel(vehicleid) - 400;
-    return (IsValidVehicle(vehicleid)) ? (Vehicle_Info[model][E_VEHICLE_DRIVE_TYPE]) : (DRIVE_INVALID);
+    output = Vehicle_Info[model][E_VEHICLE_DRIVE_TYPE];
+    return Ok();
 }
 
 /**
@@ -1342,12 +1436,17 @@ stock DRIVE_TYPE: Vehicle_GetDriveType(vehicleid)
  * <seealso name="Vehicle_GetEngineState" />
  * <seealso name="Vehicle_SetEngineState" />
  * <seealso name="Vehicle_GetDriveType" />
- * <returns>Vehicle engine type. 0 if vehicle is not created.</returns>
+ * <returns>Vehicle engine type. ENGINE_INVALID if vehicle is not created OR if vehicle is powered by human (bikes).</returns>
  */
-stock ENGINE_TYPE: Vehicle_GetEngineType(vehicleid) 
+stock Error: Vehicle_GetEngineType(vehicleid, &ENGINE_TYPE: output) 
 {
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
     new model = GetVehicleModel(vehicleid) - 400;
-    return ((IsValidVehicle(vehicleid)) ? (Vehicle_Info[model][E_VEHICLE_ENGINE_TYPE]) : (ENGINE_INVALID));
+    output = Vehicle_Info[model][E_VEHICLE_ENGINE_TYPE];
+    return Ok();
 }
 
 // --
@@ -1355,31 +1454,35 @@ stock ENGINE_TYPE: Vehicle_GetEngineType(vehicleid)
 // --
 
 /**
- * <summary> Gets the engine state.</summary>
- * <param name="vehicleid"> Vehicle from which we get engine state.</param>
-
- * <returns> Engine state. </returns>
+ * <summary>Gets the engine state.</summary>
+ * <param name="vehicleid">Vehicle from which we get engine state.</param>
+ * <seealso name="Vehicle_SetBootState" />
+ * <returns>Boot state.</returns>
  */
-
-stock VEHICLE_PARAMS: Vehicle_GetBootState(vehicleid) 
+stock Error: Vehicle_GetBootState(vehicleid, &VEHICLE_PARAMS: output) 
 {
-    return Vehicle_gsParams[vehicleid][PARAMS_BOOT];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_gsParams[vehicleid][PARAMS_BOOT];
+    return Ok();
 }
 
 /**
  * <summary> Sets the boot state.</summary>
  * <param name="vehicleid"> Vehicle which we set the boot state.</param>
  * <param name="engine_state"> Boot state to set.</param>
- * <returns> SetVehicleParamsEx values. </returns>
+ * <seealso name="Vehicle_GetBootState" />
+ * <returns>SetVehicleParamsEx values. </returns>
 */
-
-stock bool: Vehicle_SetBootState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: boot_state, tag=tagof(id)) 
+stock Error: Vehicle_SetBootState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: boot_state, tag=tagof(id)) 
 {
     if(tag==tagof(_:)) 
     {        
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsParams[id][PARAMS_BOOT] = boot_state;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -1392,7 +1495,7 @@ stock bool: Vehicle_SetBootState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: boo
             SetVehicleParamsEx(i, Vehicle_gsParams[i][PARAMS_ENGINE], Vehicle_gsParams[i][PARAMS_LIGHTS], Vehicle_gsParams[i][PARAMS_ALARM], Vehicle_gsParams[i][PARAMS_DOORS], Vehicle_gsParams[i][PARAMS_BONNET], Vehicle_gsParams[i][PARAMS_BOOT], Vehicle_gsParams[i][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 // --
@@ -1404,10 +1507,14 @@ stock bool: Vehicle_SetBootState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: boo
  * <param name="vehicleid"> Vehicle from which we get bonnet state.</param>
  * <returns> Bonnet state. </returns>
  */
-
-stock VEHICLE_PARAMS: Vehicle_GetBonnetState(vehicleid) 
+stock Error: Vehicle_GetBonnetState(vehicleid, &VEHICLE_PARAMS: output) 
 {
-    return Vehicle_gsParams[vehicleid][PARAMS_BONNET];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_gsParams[vehicleid][PARAMS_BONNET];
+    return Ok();
 }
 
 /**
@@ -1423,7 +1530,7 @@ stock bool: Vehicle_SetBonnetState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: b
     {        
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsParams[id][PARAMS_BONNET] = bonnet_state;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -1436,7 +1543,7 @@ stock bool: Vehicle_SetBonnetState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: b
             SetVehicleParamsEx(i, Vehicle_gsParams[i][PARAMS_ENGINE], Vehicle_gsParams[i][PARAMS_LIGHTS], Vehicle_gsParams[i][PARAMS_ALARM], Vehicle_gsParams[i][PARAMS_DOORS], Vehicle_gsParams[i][PARAMS_BONNET], Vehicle_gsParams[i][PARAMS_BOOT], Vehicle_gsParams[i][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 
@@ -1449,10 +1556,14 @@ stock bool: Vehicle_SetBonnetState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: b
  * <param name="vehicleid"> Vehicle from which we get Objective state.</param>
  * <returns> Objective state. </returns>
  */
-
-stock VEHICLE_PARAMS: Vehicle_GetObjectiveState(vehicleid) 
+stock Error: Vehicle_GetObjectiveState(vehicleid, &VEHICLE_PARAMS: output) 
 {
-    return Vehicle_gsParams[vehicleid][PARAMS_OBJECTIVE];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_gsParams[vehicleid][PARAMS_OBJECTIVE];
+    return Ok();
 }
 
 /**
@@ -1461,14 +1572,13 @@ stock VEHICLE_PARAMS: Vehicle_GetObjectiveState(vehicleid)
  * <param name="engine_state"> Objective state to set.</param>
  * <returns> SetVehicleParamsEx values. </returns>
 */
-
 stock bool: Vehicle_SetObjectiveState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: objective_state, tag=tagof(id)) 
 {
     if(tag==tagof(_:)) 
     {        
         if(!IsValidVehicle(vehicleid))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsParams[id][PARAMS_OBJECTIVE] = objective_state;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -1481,7 +1591,7 @@ stock bool: Vehicle_SetObjectiveState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS
             SetVehicleParamsEx(i, Vehicle_gsParams[i][PARAMS_ENGINE], Vehicle_gsParams[i][PARAMS_LIGHTS], Vehicle_gsParams[i][PARAMS_ALARM], Vehicle_gsParams[i][PARAMS_DOORS], Vehicle_gsParams[i][PARAMS_BONNET], Vehicle_gsParams[i][PARAMS_BOOT], Vehicle_gsParams[i][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 // --
@@ -1528,9 +1638,14 @@ const
  * <returns>Number of lights. 0 if specified vehicle is invalid.</returns>
  * <remarks>Returns number of lights which can be modified. </remarks>
  */
-stock Vehicle_GetLightsNumber(vehicleid)
+stock Error: Vehicle_GetLightsNumber(vehicleid, &output)
 {
-    return ((IsValidVehicle(vehicleid)) ? (Vehicle_Info[GetVehicleModel(vehicleid) - 400][E_VEHICLE_LIGHTS_NUMBER]) : (INVALID_VEHICLE_ID));
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_Info[GetVehicleModel(vehicleid) - 400][E_VEHICLE_LIGHTS_NUMBER];
+    return Ok();
 }
 
 /** 
@@ -1548,7 +1663,7 @@ stock Vehicle_GetLightsNumber(vehicleid)
  * <seealso name="Vehicle_GetLightsState" />
  * <returns> UpdateVehicleDamageStatus values. </returns>
  */
-stock bool: Vehicle_SetLightsConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIGHT_CONDITION: front_left, VEHICLE_LIGHT_CONDITION: front_right, VEHICLE_LIGHT_CONDITION: back, tag=tagof(id))
+stock Error: Vehicle_SetLightsConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIGHT_CONDITION: front_left, VEHICLE_LIGHT_CONDITION: front_right, VEHICLE_LIGHT_CONDITION: back, tag=tagof(id))
 {
     new 
         VEHICLE_LIGHT_STATUS: lights, 
@@ -1560,7 +1675,7 @@ stock bool: Vehicle_SetLightsConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIG
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         GetVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, lights, unnecessary_tires);
         UpdateVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, VEHICLE_LIGHT_STATUS: encode_lights(front_left, front_right, back), unnecessary_tires);
@@ -1573,7 +1688,7 @@ stock bool: Vehicle_SetLightsConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIG
             UpdateVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, VEHICLE_LIGHT_STATUS: encode_lights(front_left, front_right, back), unnecessary_tires);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -1590,7 +1705,7 @@ stock bool: Vehicle_SetLightsConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIG
  * <seealso name="Vehicle_GetLightsState" />
  * <returns> UpdateVehicleDamageStatus values. </returns>
 */
-stock Vehicle_SetLightsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIGHT: light, VEHICLE_LIGHT_CONDITION: condition, tag=tagof(id))
+stock Error: Vehicle_SetLightsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIGHT: light, VEHICLE_LIGHT_CONDITION: condition, tag=tagof(id))
 {
     new 
         VEHICLE_LIGHT_STATUS: lights, 
@@ -1602,7 +1717,7 @@ stock Vehicle_SetLightsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIGHT: ligh
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         GetVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, lights, unnecessary_tires);
         switch(light)
@@ -1691,7 +1806,7 @@ stock Vehicle_SetLightsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIGHT: ligh
             }
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -1707,11 +1822,11 @@ stock Vehicle_SetLightsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_LIGHT: ligh
  * <seealso name="Vehicle_GetLightsState" />
  * <returns>Returns -1 if vehicle doesn't exist, otherwise light state.</returns>
 */
-stock VEHICLE_LIGHT_CONDITION: Vehicle_GetLightsCondition(vehicleid, VEHICLE_LIGHT: light)
+stock Error: Vehicle_GetLightsCondition(vehicleid, VEHICLE_LIGHT: light, &VEHICLE_LIGHT_CONDITION: output)
 {    
     if(!IsValidVehicle(vehicleid))
     {
-        return VEHICLE_LIGHT_CONDITION: -1;
+        return Error(1, "Invalid vehicle");
     }
     new 
         VEHICLE_LIGHT_STATUS: lights,
@@ -1733,18 +1848,18 @@ stock VEHICLE_LIGHT_CONDITION: Vehicle_GetLightsCondition(vehicleid, VEHICLE_LIG
     {
         case VEHICLE_LIGHT_FRONT_LEFT:
         {
-            return front_left;
+            output = front_left;
         }
         case VEHICLE_LIGHT_FRONT_RIGHT:
         {
-            return front_right;
+            output = front_right;
         }
         case VEHICLE_LIGHT_BACK:
         {
-            return back;
+            output = back;
         }
     }
-    return VEHICLE_LIGHT_CONDITION: -1;
+    return Ok();
 }
 
 /**
@@ -1760,11 +1875,11 @@ stock VEHICLE_LIGHT_CONDITION: Vehicle_GetLightsCondition(vehicleid, VEHICLE_LIG
  * <seealso name="Vehicle_SetLightsCondition" />
  * <returns> GetVehicleDamageStatus values. </returns>
 */
-stock bool: Vehicle_GetLightsConditionEx(vehicleid, &VEHICLE_LIGHT_CONDITION: front_left, &VEHICLE_LIGHT_CONDITION: front_right, &VEHICLE_LIGHT_CONDITION: back) 
+stock Error: Vehicle_GetLightsConditionEx(vehicleid, &VEHICLE_LIGHT_CONDITION: front_left, &VEHICLE_LIGHT_CONDITION: front_right, &VEHICLE_LIGHT_CONDITION: back) 
 {    
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle");
     }
     new 
         VEHICLE_LIGHT_STATUS: lights,
@@ -1774,7 +1889,7 @@ stock bool: Vehicle_GetLightsConditionEx(vehicleid, &VEHICLE_LIGHT_CONDITION: fr
 
     GetVehicleDamageStatus(vehicleid, unnecessary_panels, unnecessary_doors, lights, unnecessary_tires);
     decode_lights(lights, front_left, front_right, back);
-    return true;
+    return Ok();
 }
 
 /**
@@ -1790,13 +1905,13 @@ stock bool: Vehicle_GetLightsConditionEx(vehicleid, &VEHICLE_LIGHT_CONDITION: fr
  * <seealso name="Vehicle_GetLightsState" />
  * <returns> SetVehicleParamsEx values. </returns>
 */
-stock bool: Vehicle_SetLightsState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: light_state, tag=tagof(id)) 
+stock Error: Vehicle_SetLightsState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: light_state, tag=tagof(id)) 
 {
     if(tag==tagof(_:)) 
     {        
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsParams[id][PARAMS_LIGHTS] = light_state;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -1806,7 +1921,9 @@ stock bool: Vehicle_SetLightsState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: l
     {
         foreach(new i : Vehicle_gsGroups[VehicleGroup: id])
         {
-            if(Vehicle_GetLightsNumber(id) == 0)
+            new lights;
+            Vehicle_GetLightsNumber(id, lights);
+            if(lights == 0)
             {
                 continue;
             }
@@ -1814,7 +1931,7 @@ stock bool: Vehicle_SetLightsState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: l
             SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -1829,13 +1946,14 @@ stock bool: Vehicle_SetLightsState(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: l
  * <seealso name="Vehicle_SetLightsState" />
  * <returns> VEHICLE_PARAMS_OFF and VEHICLE_PARAMS_ON for their light states respectively. </returns>
 */
-stock VEHICLE_PARAMS: Vehicle_GetLightsState(vehicleid) 
+stock Error: Vehicle_GetLightsState(vehicleid, &VEHICLE_PARAMS: output) 
 {
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        Error(1, "Invalid vehicle");
     }
-    return Vehicle_gsParams[vehicleid][PARAMS_LIGHTS];
+    output = Vehicle_gsParams[vehicleid][PARAMS_LIGHTS];
+    return Ok()
 }
 
 // --
@@ -1850,13 +1968,13 @@ stock VEHICLE_PARAMS: Vehicle_GetLightsState(vehicleid)
  * <seealso name="Vehicle_GetAlarms" />
  * <returns> SetVehicleParamsEx values. </returns>
 */
-stock bool: Vehicle_SetAlarms(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: alarm_state, tag=tagof(id)) 
+stock Error: Vehicle_SetAlarms(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: alarm_state, tag=tagof(id)) 
 {
     if(tag==tagof(_:)) 
     {      
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsParams[id][PARAMS_ALARM] = alarm_state;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -1869,7 +1987,7 @@ stock bool: Vehicle_SetAlarms(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: alarm_
             SetVehicleParamsEx(i, Vehicle_gsParams[i][PARAMS_ENGINE], Vehicle_gsParams[i][PARAMS_LIGHTS], Vehicle_gsParams[i][PARAMS_ALARM], Vehicle_gsParams[i][PARAMS_DOORS], Vehicle_gsParams[i][PARAMS_BONNET], Vehicle_gsParams[i][PARAMS_BOOT], Vehicle_gsParams[i][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -1879,9 +1997,14 @@ stock bool: Vehicle_SetAlarms(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: alarm_
  * <seealso name="Vehicle_GetAlarms" />
  * <returns> VEHICLE_PARAMS_OFF and VEHICLE_PARAMS_ON for their alarm states respectively. </returns>
 */
-stock VEHICLE_PARAMS: Vehicle_GetAlarms(vehicleid) 
+stock Error: Vehicle_GetAlarms(vehicleid, &VEHICLE_PARAMS: output) 
 {
-    return Vehicle_gsParams[vehicleid][PARAMS_ALARM];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_gsParams[vehicleid][PARAMS_ALARM];
+    return Ok();
 }
 
 // --
@@ -1891,6 +2014,7 @@ stock VEHICLE_PARAMS: Vehicle_GetAlarms(vehicleid)
 #define VEHICLE_WINDOWS: bool:
 #define VEHICLE_WINDOW_OPEN false
 #define VEHICLE_WINDOW_CLOSED true
+#define VEHICLE_WINDOW_NOT_SET bool: -1
 
 #define VEHICLE_WINDOW: __TAG(VEHICLE_WINDOW):
 enum VEHICLE_WINDOW:__VEHICLE_WINDOW
@@ -1917,9 +2041,14 @@ static
  * <seealso name="Vehicle_GetWindowsEx" />
  * <returns>Number of windows specified vehicle has. INVALID_VEHICLE_ID if specified vehicle is invalid.</returns>
 */
-stock Vehicle_GetWindowsNumber(vehicleid) 
+stock Error: Vehicle_GetWindowsNumber(vehicleid, &output)
 {
-    return (IsValidVehicle(vehicleid)) ? (Vehicle_Info[GetVehicleModel(vehicleid) - 400][E_VEHICLE_WINDOWS_NUMBER]) : (INVALID_VEHICLE_ID);
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    } 
+    output = Vehicle_Info[GetVehicleModel(vehicleid) - 400][E_VEHICLE_WINDOWS_NUMBER];
+    return Ok();
 }
 
 /**
@@ -1934,17 +2063,16 @@ stock Vehicle_GetWindowsNumber(vehicleid)
  * <seealso name="Vehicle_GetWindowsEx" />
  * <returns>SetVehicleParamsCarWindows values.</returns>
 */
-stock bool: Vehicle_SetWindows(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOW: window, VEHICLE_WINDOWS: window_status, tag=tagof(id))
+stock Error: Vehicle_SetWindows(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOW: window, VEHICLE_WINDOWS: window_status, tag=tagof(id))
 {
     if(tag == tagof(_:))
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsWindows[id][window] = window_status;
         SetVehicleParamsCarWindows(id, Vehicle_gsWindows[id][VEHICLE_WINDOW_DRIVER], Vehicle_gsWindows[id][VEHICLE_WINDOW_PASSENGER], Vehicle_gsWindows[id][VEHICLE_WINDOW_REAR_LEFT], Vehicle_gsWindows[id][VEHICLE_WINDOW_REAR_RIGHT]);
-        return true;
     }
     else if(tag == tagof(VehicleGroup:))
     {
@@ -1954,7 +2082,7 @@ stock bool: Vehicle_SetWindows(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOW: windo
             SetVehicleParamsCarWindows(i, Vehicle_gsWindows[i][VEHICLE_WINDOW_DRIVER], Vehicle_gsWindows[i][VEHICLE_WINDOW_PASSENGER], Vehicle_gsWindows[i][VEHICLE_WINDOW_REAR_LEFT], Vehicle_gsWindows[i][VEHICLE_WINDOW_REAR_RIGHT]);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -1968,9 +2096,14 @@ stock bool: Vehicle_SetWindows(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOW: windo
  * <seealso name="Vehicle_GetWindowsEx" />
  * <returns>Window state for specified window.</returns>
 */
-stock VEHICLE_WINDOWS: Vehicle_GetWindows(vehicleid, VEHICLE_WINDOW: window)
+stock Error: Vehicle_GetWindows(vehicleid, VEHICLE_WINDOW: window, &VEHICLE_WINDOWS: output)
 {
-    return Vehicle_gsWindows[vehicleid][window];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_gsWindows[vehicleid][window];
+    return Ok();
 }
 
 /**
@@ -1987,20 +2120,19 @@ stock VEHICLE_WINDOWS: Vehicle_GetWindows(vehicleid, VEHICLE_WINDOW: window)
  * <seealso name="Vehicle_GetWindowsEx" />
  * <returns>SetVehicleParamsCarWindows values.</returns>
 */
-stock bool: Vehicle_SetWindowsEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOWS: driver, VEHICLE_WINDOWS: passenger, VEHICLE_WINDOWS: backleft, VEHICLE_WINDOWS: backright, tag=tagof(id)) 
+stock Error: Vehicle_SetWindowsEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOWS: driver, VEHICLE_WINDOWS: passenger, VEHICLE_WINDOWS: backleft, VEHICLE_WINDOWS: backright, tag=tagof(id)) 
 {
     if(tag == tagof(_:))
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsWindows[id][VEHICLE_WINDOW_DRIVER] = driver;
         Vehicle_gsWindows[id][VEHICLE_WINDOW_PASSENGER] = passenger;
         Vehicle_gsWindows[id][VEHICLE_WINDOW_REAR_LEFT] = backleft;
         Vehicle_gsWindows[id][VEHICLE_WINDOW_REAR_RIGHT] = backright;
         SetVehicleParamsCarWindows(id, Vehicle_gsWindows[id][VEHICLE_WINDOW_DRIVER], Vehicle_gsWindows[id][VEHICLE_WINDOW_PASSENGER],Vehicle_gsWindows[id][VEHICLE_WINDOW_REAR_LEFT], Vehicle_gsWindows[id][VEHICLE_WINDOW_REAR_RIGHT]);
-        return true;
     }
     else if(tag == tagof(VehicleGroup:))
     {
@@ -2013,7 +2145,7 @@ stock bool: Vehicle_SetWindowsEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOWS: dr
             SetVehicleParamsCarWindows(i, Vehicle_gsWindows[i][VEHICLE_WINDOW_DRIVER], Vehicle_gsWindows[i][VEHICLE_WINDOW_PASSENGER], Vehicle_gsWindows[i][VEHICLE_WINDOW_REAR_LEFT], Vehicle_gsWindows[i][VEHICLE_WINDOW_REAR_RIGHT]);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -2030,11 +2162,11 @@ stock bool: Vehicle_SetWindowsEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_WINDOWS: dr
  * <seealso name="Vehicle_GetWindowsEx" />
  * <returns>GetVehicleParamsCarWindows values.</returns>
 */
-stock bool: Vehicle_GetWindowsEx(vehicleid, &VEHICLE_WINDOWS: driver, &VEHICLE_WINDOWS: passenger, &VEHICLE_WINDOWS: backleft, &VEHICLE_WINDOWS: backright) 
+stock Error: Vehicle_GetWindowsEx(vehicleid, &VEHICLE_WINDOWS: driver, &VEHICLE_WINDOWS: passenger, &VEHICLE_WINDOWS: backleft, &VEHICLE_WINDOWS: backright) 
 {
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle");
     }
 
     driver = Vehicle_gsWindows[vehicleid][VEHICLE_WINDOW_DRIVER];
@@ -2042,7 +2174,7 @@ stock bool: Vehicle_GetWindowsEx(vehicleid, &VEHICLE_WINDOWS: driver, &VEHICLE_W
     backleft = Vehicle_gsWindows[vehicleid][VEHICLE_WINDOW_REAR_LEFT];
     backright = Vehicle_gsWindows[vehicleid][VEHICLE_WINDOW_REAR_RIGHT];
 
-    return true;
+    return Ok();
 }
 
 // --
@@ -2110,7 +2242,7 @@ stock bool: Vehicle_GetTyrePoppingGlobal()
  * <seealso name="Vehicle_GetTyrePoppingGlobal" />
  * <returns>UpdateVehicleDamageStatus values. </returns>
 */
-stock bool: Vehicle_SetTyreCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE: tyre, VEHICLE_TYRE_CONDITION: condition, tag=tagof(id)) 
+stock Error: Vehicle_SetTyreCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE: tyre, VEHICLE_TYRE_CONDITION: condition, tag=tagof(id)) 
 {    
     new
         VEHICLE_DOOR_STATUS: unnecessary_doors,
@@ -2128,7 +2260,7 @@ stock bool: Vehicle_SetTyreCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE: t
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         GetVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, unnecessary_lights, tires);
         decode_tires(tires, back_right, front_right, back_left, front_left);
@@ -2181,7 +2313,7 @@ stock bool: Vehicle_SetTyreCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE: t
             UpdateVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, unnecessary_lights, VEHICLE_TYRE_STATUS: encode_tires(back_right, front_right, back_left, front_left));
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -2199,7 +2331,7 @@ stock bool: Vehicle_SetTyreCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE: t
  * <seealso name="Vehicle_GetTyrePoppingGlobal" />
  * <returns>UpdateVehicleDamageStatus values. </returns>
 */
-stock bool: Vehicle_SetTyreConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE_CONDITION: rear_right, VEHICLE_TYRE_CONDITION: front_right, VEHICLE_TYRE_CONDITION: rear_left, VEHICLE_TYRE_CONDITION: front_left, tag=tagof(id)) 
+stock Error: Vehicle_SetTyreConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE_CONDITION: rear_right, VEHICLE_TYRE_CONDITION: front_right, VEHICLE_TYRE_CONDITION: rear_left, VEHICLE_TYRE_CONDITION: front_left, tag=tagof(id)) 
 {    
     new
         VEHICLE_DOOR_STATUS: unnecessary_doors,
@@ -2211,7 +2343,7 @@ stock bool: Vehicle_SetTyreConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE_
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         GetVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, unnecessary_lights, tires);
         UpdateVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, unnecessary_lights, VEHICLE_TYRE_STATUS: encode_tires(rear_right, front_right, rear_left, front_left));
@@ -2224,7 +2356,7 @@ stock bool: Vehicle_SetTyreConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE_
             UpdateVehicleDamageStatus(id, unnecessary_panels, unnecessary_doors, unnecessary_lights, VEHICLE_TYRE_STATUS: encode_tires(rear_right, front_right, rear_left, front_left));
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -2239,11 +2371,11 @@ stock bool: Vehicle_SetTyreConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_TYRE_
  * <seealso name="Vehicle_GetTyrePoppingGlobal" />
  * <returns>-1 if vehicle is invalid, otherwise true.</returns>
 */
-stock VEHICLE_TYRE_CONDITION: Vehicle_GetTyreCondition(vehicleid, VEHICLE_TYRE: tyre) 
+stock Error: Vehicle_GetTyreCondition(vehicleid, VEHICLE_TYRE: tyre, &VEHICLE_TYRE_CONDITION: output) 
 {    
     if(!IsValidVehicle(vehicleid))
     {
-        return VEHICLE_TYRE_CONDITION: -1;
+        return Error(1, "Invalid vehicle");
     }
     new 
         VEHICLE_DOOR_STATUS: unnecessary_doors,
@@ -2263,22 +2395,22 @@ stock VEHICLE_TYRE_CONDITION: Vehicle_GetTyreCondition(vehicleid, VEHICLE_TYRE: 
     {
         case VEHICLE_TYRE_FRONT_LEFT:
         {
-            return front_left_tire;
+            output = front_left_tire;
         }
         case VEHICLE_TYRE_FRONT_RIGHT:
         {
-            return front_right_tire;
+            output = front_right_tire;
         }
         case VEHICLE_TYRE_BACK_LEFT:
         {
-            return rear_left_tire;
+            output = rear_left_tire;
         }
         case VEHICLE_TYRE_BACK_RIGHT:
         {
-            return rear_right_tire;
+            output = rear_right_tire;
         }
     }
-    return VEHICLE_TYRE_CONDITION: -1;
+    return Ok();
 }
 
 /**
@@ -2296,11 +2428,11 @@ stock VEHICLE_TYRE_CONDITION: Vehicle_GetTyreCondition(vehicleid, VEHICLE_TYRE: 
  * <seealso name="Vehicle_GetTyrePoppingGlobal" />
  * <returns>GetVehicleDamageStatus values.</returns>
 */
-stock bool: Vehicle_GetTyreConditionEx(vehicleid, &VEHICLE_TYRE_CONDITION: rear_right_tire, &VEHICLE_TYRE_CONDITION: front_right_tire, &VEHICLE_TYRE_CONDITION: rear_left_tire, &VEHICLE_TYRE_CONDITION: front_left_tire) 
+stock Error: Vehicle_GetTyreConditionEx(vehicleid, &VEHICLE_TYRE_CONDITION: rear_right_tire, &VEHICLE_TYRE_CONDITION: front_right_tire, &VEHICLE_TYRE_CONDITION: rear_left_tire, &VEHICLE_TYRE_CONDITION: front_left_tire) 
 {    
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle");
     }
     new 
         VEHICLE_DOOR_STATUS: unnecessary_doors,
@@ -2312,7 +2444,7 @@ stock bool: Vehicle_GetTyreConditionEx(vehicleid, &VEHICLE_TYRE_CONDITION: rear_
     decode_tires(tires, rear_right_tire, front_right_tire, rear_left_tire, front_left_tire);
     
 
-    return true;
+    return Ok();
 }
 
 static stock decode_tires(tires, &rear_right_tire, &front_right_tire, &rear_left_tire, &front_left_tire)
@@ -2403,8 +2535,7 @@ static stock decode_doors(VEHICLE_DOOR_STATUS: doors, &bonnet, &boot, &driver_do
  * <param name="passenger"> Passenger-door state to set. </param>
  * <returns> UpdateVehicleDamageStatus values. </returns>
 */
-
-stock bool: Vehicle_SetDoorCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_DOORS: door, VEHICLE_DOOR_CONDITION: condition, tag=tagof(id)) 
+stock Error: Vehicle_SetDoorCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_DOORS: door, VEHICLE_DOOR_CONDITION: condition, tag=tagof(id)) 
 {
 
     new
@@ -2422,7 +2553,7 @@ stock bool: Vehicle_SetDoorCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_DOORS: 
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         GetVehicleDamageStatus(id, unnecessary_panels, doors, unnecessary_lights, unnecessary_tires);
         decode_doors(doors, hood, trunk, left_door, right_door);
@@ -2475,7 +2606,44 @@ stock bool: Vehicle_SetDoorCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_DOORS: 
             UpdateVehicleDamageStatus(i, unnecessary_panels, VEHICLE_DOOR_STATUS: encode_doors(hood, trunk, left_door, right_door), unnecessary_lights, unnecessary_tires);
         } 
     }
-    return true;
+    return Ok();
+}
+
+/**
+ * <summary> Sets the doors state.</summary>
+ * <param name="vehicleid"> Vehicle which we set the doors state.</param>
+ * <param name="hood"> Hood state to set. </param>
+ * <param name="trunk"> Trunk state to set. </param>
+ * <param name="driver"> Driver-door state to set. </param>
+ * <param name="passenger"> Passenger-door state to set. </param>
+ * <returns> UpdateVehicleDamageStatus values. </returns>
+*/
+stock Error: Vehicle_SetDoorConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_DOOR_CONDITION: hood, VEHICLE_DOOR_CONDITION: trunk, VEHICLE_DOOR_CONDITION: left_door, VEHICLE_DOOR_CONDITION: right_door, tag=tagof(id)) 
+{    
+    new
+        VEHICLE_DOOR_STATUS: doors,
+        VEHICLE_LIGHT_STATUS: unnecessary_lights,
+        VEHICLE_PANEL_STATUS: unnecessary_panels, 
+        VEHICLE_TYRE_STATUS: unnecessary_tires;
+
+    if(tag == tagof(_:)) 
+    {
+        if(!IsValidVehicle(id))
+        {
+            return Error(1, "Invalid vehicle");
+        }
+        GetVehicleDamageStatus(id, unnecessary_panels, doors, unnecessary_lights, unnecessary_tires);
+        UpdateVehicleDamageStatus(id, unnecessary_panels, VEHICLE_DOOR_STATUS: encode_doors(hood, trunk, left_door, right_door), unnecessary_lights, unnecessary_tires);
+    }
+    else if(tag == tagof(VehicleGroup:))
+    {
+        foreach(new i : Vehicle_gsGroups[VehicleGroup: id])
+        {
+            GetVehicleDamageStatus(id, unnecessary_panels, doors, unnecessary_lights, unnecessary_tires);
+            UpdateVehicleDamageStatus(id, unnecessary_panels, VEHICLE_DOOR_STATUS: encode_doors(hood, trunk, left_door, right_door), unnecessary_lights, unnecessary_tires);
+        }
+    }
+    return Ok();
 }
 
 /**
@@ -2486,12 +2654,11 @@ stock bool: Vehicle_SetDoorCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_DOORS: 
  * <param name="&driver"> Driver-door state to get.</param>
  * <param name="&passenger"> Passenger-door state to get.</param>
 */
-
-stock Vehicle_GetDoorCondition(vehicleid, &VEHICLE_DOOR_CONDITION: bonnet, &VEHICLE_DOOR_CONDITION: boot, &VEHICLE_DOOR_CONDITION: driver, &VEHICLE_DOOR_CONDITION: passenger) 
+stock Error: Vehicle_GetDoorConditionEx(vehicleid, &VEHICLE_DOOR_CONDITION: bonnet, &VEHICLE_DOOR_CONDITION: boot, &VEHICLE_DOOR_CONDITION: driver, &VEHICLE_DOOR_CONDITION: passenger) 
 {
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle");
     }
     new 
         VEHICLE_DOOR_STATUS: doors,
@@ -2501,8 +2668,51 @@ stock Vehicle_GetDoorCondition(vehicleid, &VEHICLE_DOOR_CONDITION: bonnet, &VEHI
     
     GetVehicleDamageStatus(vehicleid, unnecessary_panels, doors, unnecessary_lights, unnecessary_tires);
     decode_doors(doors, bonnet, boot, driver, passenger);
-    return true;
+    return Ok();
 }
+
+stock Error: Vehicle_GetDoorCondition(vehicleid, VEHICLE_DOORS: door, &VEHICLE_DOOR_CONDITION: output) 
+{    
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    new 
+        VEHICLE_DOOR_STATUS: doors,
+        VEHICLE_LIGHT_STATUS: unnecessary_lights,
+        VEHICLE_PANEL_STATUS: unnecessary_panels, 
+        VEHICLE_TYRE_STATUS: unnecessary_tires,
+
+        hood,
+        trunk,
+        right_door,
+        left_door;
+
+    GetVehicleDamageStatus(vehicleid, unnecessary_panels, doors, unnecessary_lights, unnecessary_tires);
+    decode_doors(VEHICLE_DOOR_STATUS: doors, hood, trunk, left_door, right_door);
+
+    switch(door)
+    {
+        case VEHICLE_DOOR_HOOD:
+        {
+            output = hood;
+        }
+        case VEHICLE_DOOR_TRUNK:
+        {
+            output = trunk;
+        }
+        case VEHICLE_DOOR_DRIVER:
+        {
+            output = left_door;
+        }
+        case VEHICLE_DOOR_PASSENGER:
+        {
+            output = right_door;
+        }
+    }
+    return Ok();
+}
+
 
 /**
  * <summary> Gets the doors' lock state.</summary>
@@ -2510,9 +2720,14 @@ stock Vehicle_GetDoorCondition(vehicleid, &VEHICLE_DOOR_CONDITION: bonnet, &VEHI
  * <returns> Doors' lock state. </returns>
 */
 
-stock VEHICLE_PARAMS: Vehicle_GetDoorsLocked(vehicleid) 
+stock Error: Vehicle_GetDoorsLocked(vehicleid, &VEHICLE_PARAMS: output) 
 {
-    return Vehicle_gsParams[vehicleid][PARAMS_DOORS];
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = Vehicle_gsParams[vehicleid][PARAMS_DOORS];
+    return Ok();
 }
 
 /**
@@ -2522,13 +2737,13 @@ stock VEHICLE_PARAMS: Vehicle_GetDoorsLocked(vehicleid)
  * <returns> SetVehicleParamsEx values. </returns>
 */
 
-stock Vehicle_SetDoorsLocked(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: door_state, tag=tagof(id)) 
+stock Error: Vehicle_SetDoorsLocked(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: door_state, tag=tagof(id)) 
 {
     if(tag==tagof(_:)) 
     {        
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         Vehicle_gsParams[id][PARAMS_DOORS] = door_state;
         SetVehicleParamsEx(id, Vehicle_gsParams[id][PARAMS_ENGINE], Vehicle_gsParams[id][PARAMS_LIGHTS], Vehicle_gsParams[id][PARAMS_ALARM], Vehicle_gsParams[id][PARAMS_DOORS], Vehicle_gsParams[id][PARAMS_BONNET], Vehicle_gsParams[id][PARAMS_BOOT], Vehicle_gsParams[id][PARAMS_OBJECTIVE]);
@@ -2541,7 +2756,7 @@ stock Vehicle_SetDoorsLocked(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PARAMS: door_st
             SetVehicleParamsEx(i, Vehicle_gsParams[i][PARAMS_ENGINE], Vehicle_gsParams[i][PARAMS_LIGHTS], Vehicle_gsParams[i][PARAMS_ALARM], Vehicle_gsParams[i][PARAMS_DOORS], Vehicle_gsParams[i][PARAMS_BONNET], Vehicle_gsParams[i][PARAMS_BOOT], Vehicle_gsParams[i][PARAMS_OBJECTIVE]);
         }
     }
-    return true;
+    return Ok();
 }
 
 // --
@@ -2570,7 +2785,7 @@ static stock VEHICLE_PANEL:_@VEHICLE_PANEL() { return __VEHICLE_PANEL; }
 #define VEHICLE_PANELS_CONDITION: __TAG(VEHICLE_PANELS_CONDITION):
 enum VEHICLE_PANELS_CONDITION:__VEHICLE_PANELS_CONDITION
 {
-    VEHICLE_PANEL_UNDAMAGEDL = 0,
+    VEHICLE_PANEL_UNDAMAGED = 0,
     VEHICLE_PANEL_CRUSHED = 1,
     VEHICLE_PANEL_HANGING_LOOSE = 2,
     VEHICLE_PANEL_REMOVED
@@ -2594,6 +2809,107 @@ static stock encode_panels(front_left_panel, front_right_panel, rear_left_panel,
 }
 
 
+stock Error: Vehicle_SetPanelsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PANEL: panel, VEHICLE_PANELS_CONDITION: condition, tag=tagof(id)) 
+{
+
+    new
+        VEHICLE_DOOR_STATUS: unnecessary_doors,
+        VEHICLE_LIGHT_STATUS: unnecessary_lights,
+        VEHICLE_PANEL_STATUS: panels, 
+        VEHICLE_TYRE_STATUS: unnecessary_tires,
+
+        front_left_panel,
+        front_right_panel,
+        rear_left_panel,
+        rear_right_panel,
+        windshield,
+        front_bumper,        
+        rear_bumper;
+
+    if(tag == tagof(_:)) 
+    {
+        if(!IsValidVehicle(id))
+        {
+            return Error(1, "Invalid vehicle");
+        }
+        GetVehicleDamageStatus(id, panels, unnecessary_doors, unnecessary_lights, unnecessary_tires);
+        decode_panels(panels, front_left_panel, front_right_panel, rear_left_panel, rear_right_panel, windshield, front_bumper, rear_bumper);
+        switch(panel)
+        {
+            case VEHICLE_PANEL_FRONT_LEFT:
+            {
+                front_left_panel = condition;
+            }
+            case VEHICLE_PANEL_FRONT_RIGHT:
+            {
+                front_right_panel = condition;
+            }
+            case VEHICLE_PANEL_BACK_LEFT:
+            {
+                rear_left_panel = condition;
+            }
+            case VEHICLE_PANEL_BACK_RIGHT:
+            {
+                rear_right_panel = condition;
+            }
+            case VEHICLE_PANEL_WINDSHIELD:
+            {
+                windshield = condition;
+            }
+            case VEHICLE_PANEL_FRONT_BUMPER:
+            {
+                front_bumper = condition;
+            }
+            case VEHICLE_PANEL_BACK_BUMPER:
+            {
+                rear_bumper = condition;
+            }
+        }
+        UpdateVehicleDamageStatus(id, VEHICLE_PANELS_CONDITION: encode_panels(front_left_panel, front_right_panel, rear_left_panel, rear_right_panel, windshield, front_bumper, rear_bumper), unnecessary_doors, unnecessary_lights, unnecessary_tires);
+    }
+    else if(tag == tagof(VehicleGroup:))
+    {
+        foreach(new i : Vehicle_gsGroups[VehicleGroup: id])
+        {
+            GetVehicleDamageStatus(i, panels, unnecessary_doors, unnecessary_lights, unnecessary_tires);
+            decode_panels(panels, front_left_panel, front_right_panel, rear_left_panel, rear_right_panel, windshield, front_bumper, rear_bumper);
+            switch(panel)
+            {
+                case VEHICLE_PANEL_FRONT_LEFT:
+                {
+                    front_left_panel = condition;
+                }
+                case VEHICLE_PANEL_FRONT_RIGHT:
+                {
+                    front_right_panel = condition;
+                }
+                case VEHICLE_PANEL_BACK_LEFT:
+                {
+                    rear_left_panel = condition;
+                }
+                case VEHICLE_PANEL_BACK_RIGHT:
+                {
+                    rear_right_panel = condition;
+                }
+                case VEHICLE_PANEL_WINDSHIELD:
+                {
+                    windshield = condition;
+                }
+                case VEHICLE_PANEL_FRONT_BUMPER:
+                {
+                    front_bumper = condition;
+                }
+                case VEHICLE_PANEL_BACK_BUMPER:
+                {
+                    rear_bumper = condition;
+                }
+            }
+            UpdateVehicleDamageStatus(i, VEHICLE_PANELS_CONDITION: encode_panels(front_left_panel, front_right_panel, rear_left_panel, rear_right_panel, windshield, front_bumper, rear_bumper), unnecessary_doors, unnecessary_lights, unnecessary_tires);
+        } 
+    }
+    return Ok();
+}
+
 /**
  * <summary> Sets the vehicle's panels' states. </summary>
  * <param name="vehicleid"> Id of vehicle we are setting panel states to.</param>
@@ -2602,7 +2918,7 @@ static stock encode_panels(front_left_panel, front_right_panel, rear_left_panel,
  * <param name="back_left_panel"> Back left panel state to set.</param>
  * <param name="back_right_panel"> Back right state to set.</param>
 */
-stock bool: Vehicle_SetPanelsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PANELS_CONDITION: front_left_panel, VEHICLE_PANELS_CONDITION: front_right_panel, VEHICLE_PANELS_CONDITION: back_left_panel, VEHICLE_PANELS_CONDITION: back_right_panel, VEHICLE_PANELS_CONDITION: front_bumper, VEHICLE_PANELS_CONDITION: back_bumper, tag=tagof(id)) 
+stock Error: Vehicle_SetPanelsConditionEx(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PANELS_CONDITION: front_left_panel, VEHICLE_PANELS_CONDITION: front_right_panel, VEHICLE_PANELS_CONDITION: back_left_panel, VEHICLE_PANELS_CONDITION: back_right_panel, VEHICLE_PANELS_CONDITION: front_bumper, VEHICLE_PANELS_CONDITION: back_bumper, tag=tagof(id)) 
 {
     new
         VEHICLE_DOOR_STATUS: unnecessary_doors,
@@ -2617,7 +2933,7 @@ stock bool: Vehicle_SetPanelsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PANEL
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         GetVehicleDamageStatus(id, panels, unnecessary_doors, unnecessary_lights, unnecessary_tires);
         decode_panels(panels, unnecessary_decodes, unnecessary_decodes, unnecessary_decodes, unnecessary_decodes, unnecessary_windshield, unnecessary_decodes, unnecessary_decodes);
@@ -2632,7 +2948,7 @@ stock bool: Vehicle_SetPanelsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PANEL
             UpdateVehicleDamageStatus(i, VEHICLE_PANEL_STATUS: encode_panels(front_left_panel, front_right_panel, back_left_panel, back_right_panel, unnecessary_windshield, front_bumper, back_bumper), unnecessary_doors, unnecessary_lights, unnecessary_tires);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -2643,7 +2959,7 @@ stock bool: Vehicle_SetPanelsCondition(VEHICLE_FRAMEWORK_TAGS: id, VEHICLE_PANEL
  * <param name="&back_left_panel"> Back left panel state to get.</param>
  * <param name="&back_right_panel"> Back right state to get.</param>
 */
-stock bool: Vehicle_GetPanelsCondition(vehicleid, &VEHICLE_PANELS_CONDITION: front_left_panel, &VEHICLE_PANELS_CONDITION: front_right_panel, &VEHICLE_PANELS_CONDITION: back_left_panel, &VEHICLE_PANELS_CONDITION: back_right_panel, &VEHICLE_PANELS_CONDITION: front_bumper, &VEHICLE_PANELS_CONDITION: back_bumper, &VEHICLE_PANELS_CONDITION: windshield) 
+stock Error: Vehicle_GetPanelsConditionEx(vehicleid, &VEHICLE_PANELS_CONDITION: front_left_panel, &VEHICLE_PANELS_CONDITION: front_right_panel, &VEHICLE_PANELS_CONDITION: back_left_panel, &VEHICLE_PANELS_CONDITION: back_right_panel, &VEHICLE_PANELS_CONDITION: front_bumper, &VEHICLE_PANELS_CONDITION: back_bumper, &VEHICLE_PANELS_CONDITION: windshield) 
 {
     new
         VEHICLE_DOOR_STATUS: unnecessary_doors,
@@ -2653,19 +2969,73 @@ stock bool: Vehicle_GetPanelsCondition(vehicleid, &VEHICLE_PANELS_CONDITION: fro
 
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle");
     }
     GetVehicleDamageStatus(vehicleid, panels, unnecessary_doors, unnecessary_lights, unnecessary_tires);
     decode_panels(panels, front_left_panel, front_right_panel, back_left_panel, back_right_panel, front_bumper, back_bumper, windshield);
-    return true;
+    return Ok();
 }
 
+stock Error: Vehicle_GetPanelsCondition(vehicleid, VEHICLE_PANEL: panel, &VEHICLE_PANELS_CONDITION: output) 
+{    
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    new 
+        VEHICLE_DOOR_STATUS: unnecessary_doors,
+        VEHICLE_LIGHT_STATUS: unnecessary_lights,
+        VEHICLE_PANEL_STATUS: panels, 
+        VEHICLE_TYRE_STATUS: unnecessary_tires,
+
+        front_left_panel,
+        front_right_panel,
+        rear_left_panel,
+        rear_right_panel,
+        windshield,
+        front_bumper,        
+        rear_bumper;
+
+    GetVehicleDamageStatus(vehicleid, panels, unnecessary_doors, unnecessary_lights, unnecessary_tires);
+    decode_panels(panels, front_left_panel, front_right_panel, rear_left_panel, rear_right_panel, windshield, front_bumper, rear_bumper);
+    
+    switch(panel)
+    {
+        case VEHICLE_PANEL_FRONT_LEFT:
+        {
+            output = front_left_panel;
+        }
+        case VEHICLE_PANEL_FRONT_RIGHT:
+        {
+            output = front_right_panel;
+        }
+        case VEHICLE_PANEL_BACK_LEFT:
+        {
+            output = rear_left_panel;
+        }
+        case VEHICLE_PANEL_BACK_RIGHT:
+        {
+            output = rear_right_panel;
+        }
+        case VEHICLE_PANEL_WINDSHIELD:
+        {
+            output = windshield;
+        }
+        case VEHICLE_PANEL_FRONT_BUMPER:
+        {
+            output = front_bumper;
+        }
+        case VEHICLE_PANEL_BACK_BUMPER:
+        {
+            output = rear_bumper;
+        }
+    }
+    return Ok();
+}
 
 // --
 // Health
 // --
-
-forward OnVehicleHealthChange(vehicleid, Float: oldhealth, Float:newhealth);
 
 stock timer __Vehicle_HealthTrack[500](vehicleid)
 {
@@ -2682,50 +3052,60 @@ stock timer __Vehicle_HealthTrack[500](vehicleid)
  * <summary> Sets vehicle health.</summary>
  * <param name="vehicleid"> Vehicle we set health to.</param>
  * <param name="health"> Health to set.</param>
+ * <seealso name="OnVehicleHealthChange" />
+ * <seealso name="Vehicle_GetHealth" />
+ * <seealso name="Vehicle_Repair" />
  * <returns> 1 on success, 0 otherwise.</param>
 */
-
-stock bool: Vehicle_SetHealth(vehicleid, Float:health)
+stock Error: Vehicle_SetHealth(vehicleid, Float:health)
 {
-    if(health < 0 || !IsValidVehicle(vehicleid)) 
+    if(health < 0)
     {
-        return false;
+        return Error(1, "Invalid health amount.");
+    }
+    else if(!IsValidVehicle(vehicleid))
+    {
+        return Error(2, "Invalid vehicle.");
     }
     Vehicle_gsHealth[vehicleid] = health;
     SetVehicleHealth(vehicleid, health);
-    return true;
+    return Ok();
 }
 
 /**
  * <summary> Gets vehicle health.</summary>
  * <param name="vehicleid"> Vehicle we get health from.</param>
  * <param name="&health"> Optional variable to store value into.</param>
- * <returns> 0.0 on fail, else vehicle health or stores health in referred variable.</param>
+ * <seealso name="OnVehicleHealthChange" />
+ * <seealso name="Vehicle_SetHealth" />
+ * <seealso name="Vehicle_Repair" />
+ * <returns> -1.0 on fail, else vehicle health.</param>
 */
-
-stock Float:Vehicle_GetHealth(vehicleid, &Float:health = 0.0)
+stock Error: Vehicle_GetHealth(vehicleid, &Float: output)
 {
-    if(!IsValidVehicle(vehicleid)) 
+    if(!IsValidVehicle(vehicleid))
     {
-        return 0.0;
+        return Error(1, "Invalid vehicle");
     }
-    if(numargs() == 2)
-    {
-        return health = Vehicle_gsHealth[vehicleid];
-    }
-    else
-    {
-        return Vehicle_gsHealth[vehicleid];
-    }
+    output = Vehicle_gsHealth[vehicleid];
+    return Ok();
 }
 
 /**
  * <summary> Repairs vehicle. </summary>
+ * <seealso name="OnVehicleHealthChange" />
+ * <seealso name="Vehicle_GetHealth" />
+ * <seealso name="Vehicle_SetHealth" />
+ * <returns>RepairVehicle values.</returns>
  */
-
-stock bool: Vehicle_Repair(vehicleid) 
+stock Error: Vehicle_Repair(vehicleid) 
 {
-    return RepairVehicle(vehicleid);
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    RepairVehicle(vehicleid);
+    return Ok();
 }
 
 // --
@@ -2741,26 +3121,31 @@ stock bool: Vehicle_Repair(vehicleid)
  * <seealso name="Vehicle_SetNumberPlate" />
  * <returns>INVALID_VEHICLE_ID if vehicle is invalid.</returns>
 */
-stock Vehicle_GetNumberPlate(vehicleid, string: plate[], len = sizeof(plate)) 
+stock Error: Vehicle_GetNumberPlate(vehicleid, string: plate[], len = sizeof(plate)) 
 {
-    return IsValidVehicle(vehicleid) ? GetVehicleNumberPlate(vehicleid, plate, len) : INVALID_VEHICLE_ID;
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    GetVehicleNumberPlate(vehicleid, plate, len);
+    return Ok();
 }
 
 /**
  * <library>vehicle_plus</library>
- * <summary> Sets the vehicle's number plate.</summary>
- * <param name="vehicleid"> Vehicle which we set the vehicle plate.</param>
+ * <summary>Sets the vehicle's number plate.</summary>
+ * <param name="vehicleid">Vehicle which we set the vehicle plate.</param>
  * <param name="plate"> Plate to set.</param>
  * <seealso name="Vehicle_GetNumberPlate" />
  * <returns>False if vehicle is invalid, otherwise true.</returns>
 */
-stock bool: Vehicle_SetNumberPlate(VEHICLE_FRAMEWORK_TAGS: id, const string: plate[], tag=tagof(id)) 
+stock Error: Vehicle_SetNumberPlate(VEHICLE_FRAMEWORK_TAGS: id, const string: plate[], tag=tagof(id)) 
 {
     if(tag == tagof(_:))
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         SetVehicleNumberPlate(id, plate);
     }
@@ -2771,7 +3156,7 @@ stock bool: Vehicle_SetNumberPlate(VEHICLE_FRAMEWORK_TAGS: id, const string: pla
             SetVehicleNumberPlate(i, plate);
         } 
     }
-    return true;
+    return Ok();
 }
 
 // --
@@ -3195,15 +3580,16 @@ static const Vehicle_gscComponents[MAX_VEHICLES_MODELS][MAX_VEHICLE_COMPONENTS] 
 /**
 summary to write */
 
-stock Vehicle_GetComponentName(componentid, name[], size = sizeof(name))
+stock Error: Vehicle_GetComponentName(componentid, name[], size = sizeof(name))
 {
 	new idx = componentid - 1000;
 
 	if (!(0 <= idx <= MAX_VEHICLES_COMPONENTS)) 
     {
-		return 0;
+		return Error(1, "Invalid componentid");
 	}
-	return strunpack(name, Vehicle_gscComponentName[idx], size);
+	strunpack(name, Vehicle_gscComponentName[idx], size);
+    return Ok();
 }
 
 stock bool: Vehicle_CanHaveComponent(vehicleid, componentid)
@@ -3230,14 +3616,17 @@ stock bool: Vehicle_CanHaveComponent(vehicleid, componentid)
  * <param name="componentid"> componentid to set.</param>
  * <returns> 0 if function fails, eg. vehicle is not created or vehicle can't have the component, else 1.</param>
 */
-
-stock bool: Vehicle_AddComponent(VEHICLE_FRAMEWORK_TAGS: id, componentid, tag=tagof(id)) 
+stock Error: Vehicle_AddComponent(VEHICLE_FRAMEWORK_TAGS: id, componentid, tag=tagof(id)) 
 {
     if(tag == tagof(_:))
     {
-        if(!Vehicle_CanHaveComponent(id, componentid) || !IsValidVehicle(id))
+        if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle.");
+        }
+        else if(!Vehicle_CanHaveComponent(id, componentid))
+        {
+            return Error(2, "Vehicle can't have the component.");
         }
         AddVehicleComponent(id, componentid);
     }
@@ -3252,7 +3641,7 @@ stock bool: Vehicle_AddComponent(VEHICLE_FRAMEWORK_TAGS: id, componentid, tag=ta
             AddVehicleComponent(id, componentid);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -3262,9 +3651,14 @@ stock bool: Vehicle_AddComponent(VEHICLE_FRAMEWORK_TAGS: id, componentid, tag=ta
  * <returns> 0 if function fails, eg. vehicle is not created, else 1.</param>
 */
 
-stock bool: Vehicle_RemoveComponent(vehicleid, componentid)
+stock Error: Vehicle_RemoveComponent(vehicleid, componentid)
 {
-    return RemoveVehicleComponent(vehicleid, componentid);
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    RemoveVehicleComponent(vehicleid, componentid);
+    return Ok();
 }
 
 /**
@@ -3274,9 +3668,14 @@ stock bool: Vehicle_RemoveComponent(vehicleid, componentid)
  * <returns> ID of the component in slot.</param>
 */
 
-stock Vehicle_GetComponentInSlot(vehicleid, CARMODTYPE: slot) 
+stock Error: Vehicle_GetComponentInSlot(vehicleid, CARMODTYPE: slot, &output) 
 {
-    return GetVehicleComponentInSlot(vehicleid, slot);
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = GetVehicleComponentInSlot(vehicleid, slot);
+    return Ok();
 }
 
 /**
@@ -3286,9 +3685,16 @@ stock Vehicle_GetComponentInSlot(vehicleid, CARMODTYPE: slot)
  * <returns> Component slot.</param>
 */
 
-stock CARMODTYPE: Vehicle_GetComponentType(vehicleid, componentid)
+stock Error: Vehicle_GetComponentType(componentid, &CARMODTYPE: output)
 {
-    return CARMODTYPE: GetVehicleComponentType(componentid);
+    new idx = componentid - 1000;
+
+	if (!(0 <= idx <= MAX_VEHICLES_COMPONENTS)) 
+    {
+		return Error(1, "Invalid componentid");
+	}
+    output = GetVehicleComponentType(componentid);
+    return Ok();
 }
 
 // --
@@ -3317,11 +3723,11 @@ static
  * <seealso name="Vehicle_GetDistanceFromLastRefill" />
  * <returns>False if vehicle is invalid, true otherwise.</returns> 
  */
-stock bool: Vehicle_SetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit, Float: amount)
+stock Error: Vehicle_SetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit, Float: amount)
 {
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle");
     }
     if(unit == VEHICLE_UNIT_IMPERIAL)
     {
@@ -3331,9 +3737,22 @@ stock bool: Vehicle_SetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit, Float: am
     {
         Vehicle_gsFuelTankCapacity[vehicleid] = amount;
     } 
-    return true;
+    else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+    {
+        return Error(2, "Use Vehicle_SetBatteryCapacity");
+    }
+    return Ok();
 }
 
+stock Error: Vehicle_SetBatteryCapacity(vehicleid, Float: amount)
+{
+    if(Vehicle_GetEngineType(vehicleid) != ENGINE_ELECTRIC)
+    {
+        return Error(1, "Vehicle is not electric");
+    }
+    Vehicle_gsFuelTankCapacity[vehicleid];
+    return Ok();
+}
 /**
  * <library>vehicle_plus</library>
  * <summary>Sets vehicle fuel level.</summary>
@@ -3349,12 +3768,20 @@ stock bool: Vehicle_SetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit, Float: am
  * <seealso name="Vehicle_GetDistanceFromLastRefill" />
  * <returns>False if vehicle is invalid or amount is higher than capacity, true otherwise.</returns> 
  */
-stock bool: Vehicle_SetFuelLevel(vehicleid, VEHICLE_UNIT: unit, Float: amount)
+stock Error: Vehicle_SetFuelLevel(vehicleid, VEHICLE_UNIT: unit, Float: amount)
 {
-    if(!IsValidVehicle(vehicleid) || amount >= Vehicle_GetFuelTankCapacity(vehicleid, unit))
+    new ENGINE_TYPE: engine;
+    if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle.");
     }
+    new fuel_data;
+    Vehicle_GetFuelTankCapacity(vehicleid, unit, fuel_data);
+    if(amount > fuel_data)
+    {
+        return Ok(2);
+    }
+    Vehicle_GetEngineType(vehicleid, engine);
     if(unit == VEHICLE_UNIT_IMPERIAL)
     {
         Vehicle_gsFuelTankLevel[vehicleid] = amount * 3.78541; //litres
@@ -3366,8 +3793,28 @@ stock bool: Vehicle_SetFuelLevel(vehicleid, VEHICLE_UNIT: unit, Float: amount)
         Vehicle_gsFuelTankLevel[vehicleid] = amount;
         Vehicle_gsDistanceFromLastRefill[vehicleid] = 0;
         Vehicle_gsKilometersToEmpty[vehicleid] = (Vehicle_gsFuelTankLevel[vehicleid] / Vehicle_gsFuelConsumption[vehicleid]) * 100;
-    } 
-    return true;
+    }
+    else if(engine == ENGINE_ELECTRIC || unit == VEHICLE_UNIT_KILOWATT_HOUR)
+    {
+        return Error(3, "Use Vehicle_ChargeBattery");
+    }
+    return Ok();
+}
+
+stock Error: Vehicle_ChargeBattery(vehicleid, Float: amount)
+{
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle.");
+    }
+    if(Vehicle_GetEngineType(vehicleid) != ENGINE_ELECTRIC)
+    {
+        return Error(2, "Vehicle is not electric");
+    }
+    Vehicle_gsFuelTankLevel[vehicleid] = amount;
+    Vehicle_gsDistanceFromLastRefill[vehicleid] = 0;
+    Vehicle_gsKilometersToEmpty[vehicleid] = (Vehicle_gsFuelTankLevel[vehicleid] / Vehicle_gsFuelConsumption[vehicleid]) * 100;
+    return Ok();
 }
 
 /**
@@ -3385,11 +3832,11 @@ stock bool: Vehicle_SetFuelLevel(vehicleid, VEHICLE_UNIT: unit, Float: amount)
  * <seealso name="Vehicle_GetDistanceFromLastRefill" />
  * <returns>False if vehicle is invalid, true otherwise.</returns> 
  */
-stock bool: Vehicle_SetFuelConsumption(vehicleid, VEHICLE_UNIT: unit, Float: amount)
+stock Error: Vehicle_SetFuelConsumption(vehicleid, VEHICLE_UNIT: unit, Float: amount)
 {
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle");
     }
     if(unit == VEHICLE_UNIT_IMPERIAL)
     {
@@ -3399,7 +3846,25 @@ stock bool: Vehicle_SetFuelConsumption(vehicleid, VEHICLE_UNIT: unit, Float: amo
     {
         Vehicle_gsFuelConsumption[vehicleid] = amount;
     } 
-    return true;
+    else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+    {
+        return Error(2, "Use Vehicle_SetEnergyConsumption");
+    }
+    return Ok();
+}
+
+stock Error: Vehicle_SetEnergyConsumption(vehicleid, Float: amount)
+{
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle.");
+    }
+    if(!Vehicle_GetEngineType(vehicleid) != ENGINE_ELECTRIC)
+    {
+        return Error(2, "Vehicle is not electric");
+    }
+    Vehicle_gsFuelConsumption[vehicleid] = amount; //litres
+    return Ok();
 }
 
 /**
@@ -3416,21 +3881,38 @@ stock bool: Vehicle_SetFuelConsumption(vehicleid, VEHICLE_UNIT: unit, Float: amo
  * <seealso name="Vehicle_GetDistanceFromLastRefill" />
  * <returns>INVALID_VEHICLE_ID if vehicle is invalid, tank capacity otherwise.</returns> 
  */
-forward Float: Vehicle_GetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit);
-stock Float: Vehicle_GetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit)
+stock Error: Vehicle_GetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit, &Float: output)
 {
     if(IsValidVehicle(vehicleid))
     {
         if(unit == VEHICLE_UNIT_IMPERIAL)
         {
-            return Vehicle_gsFuelTankCapacity[vehicleid] * 0.26417205; // now we convert to gallons since getter
+            output = Vehicle_gsFuelTankCapacity[vehicleid] * 0.26417205; // now we convert to gallons since getter
         }
         else if(unit == VEHICLE_UNIT_METRIC)
         {
-            return Vehicle_gsFuelTankCapacity[vehicleid];
+            output = Vehicle_gsFuelTankCapacity[vehicleid];
         }   
+        else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+        {
+            return Error(2, "Use Vehicle_GetBatteryCapacity instead");
+        }
     }
-    return INVALID_VEHICLE_ID;
+    else
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    return Ok();
+}
+
+stock Error: Vehicle_GetBatteryCapacity(vehicleid, &Float: output)
+{
+    if(Vehicle_GetEngineType(vehicleid) != ENGINE_ELECTRIC)
+    {
+        return Error(1, "Vehicle is not electric");
+    }
+    output = Vehicle_gsFuelTankCapacity[vehicleid];
+    return Ok();
 }
 
 /**
@@ -3447,21 +3929,42 @@ stock Float: Vehicle_GetFuelTankCapacity(vehicleid, VEHICLE_UNIT: unit)
  * <seealso name="Vehicle_GetDistanceFromLastRefill" />
  * <returns>INVALID_VEHICLE_ID if vehicle is invalid, fuel level otherwise.</returns> 
  */
-stock Float: Vehicle_GetFuelLevel(vehicleid, VEHICLE_UNIT: unit)
+stock Error: Vehicle_GetFuelLevel(vehicleid, VEHICLE_UNIT: unit, &Float: output)
 {
     if(IsValidVehicle(vehicleid))
     {
         if(unit == VEHICLE_UNIT_IMPERIAL)
         {
-            return Vehicle_gsFuelTankLevel[vehicleid] * 0.26417205; //gallons
+            output = Vehicle_gsFuelTankLevel[vehicleid] * 0.26417205; //gallons
         }
         else if(unit == VEHICLE_UNIT_METRIC)
         {
-            return Vehicle_gsFuelTankLevel[vehicleid];
+            output = Vehicle_gsFuelTankLevel[vehicleid];
+        }
+        else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+        {
+            return Error(2, "Use Vehicle_GetBattery instead");
         }
     }
-    return INVALID_VEHICLE_ID;
-   
+    else
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    return Ok();   
+}
+
+stock Error: Vehicle_GetBattery(vehicleid, &Float: output)
+{
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle.");
+    }
+    if(Vehicle_GetEngineType(vehicleid) != ENGINE_ELECTRIC)
+    {
+        return Error(2, "Vehicle is not electric");
+    }
+    output = Vehicle_gsFuelTankLevel[vehicleid];
+    return Ok();
 }
 
 /**
@@ -3478,7 +3981,7 @@ stock Float: Vehicle_GetFuelLevel(vehicleid, VEHICLE_UNIT: unit)
  * <seealso name="Vehicle_GetDistanceFromLastRefill" />
  * <returns>INVALID_VEHICLE_ID if vehicle is invalid, otherwise consumption rate.</returns> 
  */
-stock Float: Vehicle_GetFuelConsumption(vehicleid, VEHICLE_UNIT: unit)
+stock Error: Vehicle_GetFuelConsumption(vehicleid, VEHICLE_UNIT: unit, &Float: output)
 {
     if(IsValidVehicle(vehicleid))
     {
@@ -3489,14 +3992,36 @@ stock Float: Vehicle_GetFuelConsumption(vehicleid, VEHICLE_UNIT: unit)
             // Fuel consumption rate (gal/km) = 30 l/km * 0.264172 = 7.92516 gal/km
             // Fuel consumption rate (gal/mi) = 7.92516 gal/km / 0.621371 = 12.74598 gal/mi
 
-            return (Vehicle_gsFuelConsumption[vehicleid] * 0.26417205) / 0.621371; 
+            output = (Vehicle_gsFuelConsumption[vehicleid] * 0.26417205) / 0.621371; 
         }
         else if(unit == VEHICLE_UNIT_METRIC)
         {
-            return Vehicle_gsFuelConsumption[vehicleid];
+            output = Vehicle_gsFuelConsumption[vehicleid];
+        }
+        else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+        {
+            return Error(2, "Use Vehicle_GetEnergyConsumption instead");
         }
     }
-    return INVALID_VEHICLE_ID;
+    else
+    {
+        return Error(1, "Invalid vehicle.");
+    }
+    return Ok();
+}
+
+stock Error: Vehicle_GetEnergyConsumption(vehicleid, &Float: output)
+{
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle.");
+    }
+    if(Vehicle_GetEngineType(vehicleid) != ENGINE_ELECTRIC)
+    {
+        return Error(2, "Vehicle is not electric");
+    }
+    output = Vehicle_gsFuelConsumption[vehicleid];
+    return Ok();
 }
 
 /**
@@ -3513,21 +4038,29 @@ stock Float: Vehicle_GetFuelConsumption(vehicleid, VEHICLE_UNIT: unit)
  * <seealso name="Vehicle_GetDistanceFromLastRefill" />
  * <returns>INVALID_VEHICLE_ID if vehicle is invalid, distance otherwise.</returns> 
  */
-stock Float: Vehicle_GetDistanceCanPass(vehicleid, VEHICLE_UNIT: unit)
+stock Error: Vehicle_GetDistanceCanPass(vehicleid, VEHICLE_UNIT: unit, &Float: output)
 {
     if(IsValidVehicle(vehicleid))
     {
         if(unit == VEHICLE_UNIT_IMPERIAL)
         {
             //miles
-            return Vehicle_gsKilometersToEmpty[vehicleid] * 0.621371;
+            output = Vehicle_gsKilometersToEmpty[vehicleid] * 0.621371;
         }
         else if(unit == VEHICLE_UNIT_METRIC)
         {
-            return Vehicle_gsKilometersToEmpty[vehicleid];
+            output = Vehicle_gsKilometersToEmpty[vehicleid];
+        }
+        else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+        {
+            Error(2, "kWh can't be used for distance.");
         }
     }
-    return INVALID_VEHICLE_ID;
+    else
+    {
+        return Error(1, "Invalid vehicle.");
+    }
+    return Ok();
 }
 
 /**
@@ -3544,21 +4077,29 @@ stock Float: Vehicle_GetDistanceCanPass(vehicleid, VEHICLE_UNIT: unit)
  * <seealso name="Vehicle_GetDistanceCanPass" />
  * <returns>INVALID_VEHICLE_ID if vehicle is invalid, distance otherwise.</returns> 
  */
-stock Float: Vehicle_GetDistanceFromLastRefill(vehicleid, VEHICLE_UNIT: unit)
+stock Error: Vehicle_GetDistanceFromLastRefill(vehicleid, VEHICLE_UNIT: unit, &Float: output)
 {
     if(IsValidVehicle(vehicleid))
     {
         if(unit == VEHICLE_UNIT_IMPERIAL)
         {
             //miles
-            return Vehicle_gsDistanceFromLastRefill[vehicleid] * 0.621371;
+            output = Vehicle_gsDistanceFromLastRefill[vehicleid] * 0.621371;
         }
         else if(unit == VEHICLE_UNIT_METRIC)
         {
-            return Vehicle_gsDistanceFromLastRefill[vehicleid];
+            output = Vehicle_gsDistanceFromLastRefill[vehicleid];
+        }
+        else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+        {
+            Error(2, "kWh can't be used for distance.");
         }
     }
-    return INVALID_VEHICLE_ID;
+    else
+    {
+        return Error(1, "Invalid vehicle.");
+    }
+    return Ok();
 }
 // if capacity -1 then infinite amount of fuel
 // timer on mileage
@@ -3588,12 +4129,14 @@ hook native SetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
 stock timer __Vehicle_DistanceTravelled[1000](vehicleid)
 {
     new Float: distance = GetVehicleDistanceFromPoint(vehicleid, Vehicle_gsPositionX[vehicleid], Vehicle_gsPositionY[vehicleid], Vehicle_gsPositionZ[vehicleid]);
+    
     if(distance >= 0.005)
     {
         Vehicle_gsDistanceTravelledTotalKilometres[vehicleid] += (distance / 1000);
         Vehicle_gsDistanceTravelledTotalMiles[vehicleid] += ((distance / 1000) * 0.621371);
-
-        if(Vehicle_GetEngineState(vehicleid) == VEHICLE_PARAMS_ON)
+        new VEHICLE_PARAMS: params;
+        Vehicle_GetEngineState(vehicleid, params);
+        if(params == VEHICLE_PARAMS_ON) // driver check
         {
             if(Vehicle_gsFuelTankCapacity[vehicleid] != -1)
             {
@@ -3639,21 +4182,25 @@ stock timer __Vehicle_DistanceTravelled[1000](vehicleid)
  * <seealso name="Vehicle_SetDistanceTravelled" />
  * <returns>Distance travelled.</returns> 
  */
-stock Float: Vehicle_GetDistanceTravelled(vehicleid, VEHICLE_UNIT: unit)
+stock Error: Vehicle_GetDistanceTravelled(vehicleid, VEHICLE_UNIT: unit, &Float: output)
 {
     if(!IsValidVehicle(vehicleid))
     {
-        return INVALID_VEHICLE_ID;
+        return Error(1, "Invalid vehicle");
     }
     if(unit == VEHICLE_UNIT_IMPERIAL)
     {
-	    return Vehicle_gsDistanceTravelledTotalMiles[vehicleid];
+	    output = Vehicle_gsDistanceTravelledTotalMiles[vehicleid];
     }
     else if(unit == VEHICLE_UNIT_METRIC)
     {
-        return Vehicle_gsDistanceTravelledTotalKilometres[vehicleid];
+        output = Vehicle_gsDistanceTravelledTotalKilometres[vehicleid];
     }
-    return INVALID_VEHICLE_ID;
+    else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+    {
+        return Error(2, "kWh can't be used for distance.");
+    }
+    return Ok();
 }
 
 /**
@@ -3665,7 +4212,7 @@ stock Float: Vehicle_GetDistanceTravelled(vehicleid, VEHICLE_UNIT: unit)
  * <seealso name="Vehicle_GetDistanceTravelled" />
  * <returns>False if vehicle is invalid, otherwise true.</returns> 
  */
-stock bool: Vehicle_SetDistanceTravelled(vehicleid, VEHICLE_UNIT: unit, Float:distance)
+stock Error: Vehicle_SetDistanceTravelled(vehicleid, VEHICLE_UNIT: unit, Float:distance)
 {
 	if(IsValidVehicle(vehicleid))
     {
@@ -3679,9 +4226,13 @@ stock bool: Vehicle_SetDistanceTravelled(vehicleid, VEHICLE_UNIT: unit, Float:di
             Vehicle_gsDistanceTravelledTotalMiles[vehicleid] = distance;
             Vehicle_gsDistanceTravelledTotalKilometres[vehicleid] = distance * 1.609344;
         }
-        return true;
+        else if(unit == VEHICLE_UNIT_KILOWATT_HOUR)
+        {
+            Error(2, "kWh can't be used for distance.")
+        }
+        return Ok();
     }
-	return false;
+	return Error(1, "Invalid vehicle");
 }
 
 // --
@@ -3700,11 +4251,15 @@ stock bool: Vehicle_SetDistanceTravelled(vehicleid, VEHICLE_UNIT: unit, Float:di
  * <seealso name="Vehicle_GetDimensionsInfo" />
  * <returns>LinkVehicleToInterior values.</returns>
  */
-stock bool: Vehicle_SetInterior(VEHICLE_FRAMEWORK_TAGS: id, interiorid, tag=tagof(id)) 
+stock Error: Vehicle_SetInterior(VEHICLE_FRAMEWORK_TAGS: id, interiorid, tag=tagof(id)) 
 {
     if(tag == tagof(_:))
     {
-        return LinkVehicleToInterior(id, interiorid);
+        if(!IsValidVehicle(id))
+        {
+            return Error(1, "Invalid vehicle");
+        }
+        LinkVehicleToInterior(id, interiorid);
     }
     else if(tag == tagof(VehicleGroup:))
     {
@@ -3713,7 +4268,7 @@ stock bool: Vehicle_SetInterior(VEHICLE_FRAMEWORK_TAGS: id, interiorid, tag=tago
             LinkVehicleToInterior(i, interiorid);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -3727,9 +4282,14 @@ stock bool: Vehicle_SetInterior(VEHICLE_FRAMEWORK_TAGS: id, interiorid, tag=tago
  * <seealso name="Vehicle_GetDimensionsInfo" />
  * <returns>INVALID_VEHICLE_ID if vehicle is invalid, otherwise true.</returns>
  */
-stock Vehicle_GetInterior(vehicleid) 
+stock Error: Vehicle_GetInterior(vehicleid, &output) 
 {
-    return ((IsValidVehicle(vehicleid)) ? (GetVehicleInterior(vehicleid)) : (INVALID_VEHICLE_ID));
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = GetVehicleInterior(vehicleid);
+    return Ok();
 }
 
 /**
@@ -3743,16 +4303,15 @@ stock Vehicle_GetInterior(vehicleid)
  * <seealso name="Vehicle_GetDimensionsInfo" />
  * <returns>SetVehicleVirtualWorld values.</returns>
  */
-stock bool: Vehicle_SetVirtualWorld(VEHICLE_FRAMEWORK_TAGS: id, virtual_world, tag=tagof(id))
+stock Error: Vehicle_SetVirtualWorld(VEHICLE_FRAMEWORK_TAGS: id, virtual_world, tag=tagof(id))
 {
     if(tag == tagof(_:))
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
         SetVehicleVirtualWorld(id, virtual_world);
-        return true;
     }
     else if(tag == tagof(VehicleGroup:))
     {
@@ -3761,7 +4320,7 @@ stock bool: Vehicle_SetVirtualWorld(VEHICLE_FRAMEWORK_TAGS: id, virtual_world, t
             SetVehicleVirtualWorld(i, virtual_world);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -3774,9 +4333,14 @@ stock bool: Vehicle_SetVirtualWorld(VEHICLE_FRAMEWORK_TAGS: id, virtual_world, t
  * <seealso name="Vehicle_GetDimensionsInfo" />
  * <returns>Vehicle virtual world or INVALID_VEHICLE_ID if vehicle is invalid.</returns>
 */
-stock Vehicle_GetVirtualWorld(vehicleid) 
+stock Error: Vehicle_GetVirtualWorld(vehicleid, &output) 
 {
-    return ((IsValidVehicle(vehicleid)) ? (GetVehicleVirtualWorld(vehicleid)) : (INVALID_VEHICLE_ID));
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = GetVehicleVirtualWorld(vehicleid);
+    return Ok();
 }
 
 /**
@@ -3791,12 +4355,16 @@ stock Vehicle_GetVirtualWorld(vehicleid)
  * <seealso name="Vehicle_GetDimensionsInfo" />
  * <returns>SetVehicleVirtualWorld values.</returns>
 */
-stock bool: Vehicle_SetDimensionInfo(VEHICLE_FRAMEWORK_TAGS: id, interiorid, virtual_world, tag=tagof(id))
+stock Error: Vehicle_SetDimensionInfo(VEHICLE_FRAMEWORK_TAGS: id, interiorid, virtual_world, tag=tagof(id))
 {
     if(tag == tagof(_:))
     {
+        if(!IsValidVehicle(id))
+        {
+            return Error(1, "Invalid vehicle");
+        }
         LinkVehicleToInterior(id, interiorid);
-        return SetVehicleVirtualWorld(id, virtual_world);
+        SetVehicleVirtualWorld(id, virtual_world);
     }
     else if(tag == tagof(VehicleGroup:))
     {
@@ -3806,7 +4374,7 @@ stock bool: Vehicle_SetDimensionInfo(VEHICLE_FRAMEWORK_TAGS: id, interiorid, vir
             SetVehicleVirtualWorld(i, virtual_world);
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
@@ -3821,19 +4389,29 @@ stock bool: Vehicle_SetDimensionInfo(VEHICLE_FRAMEWORK_TAGS: id, interiorid, vir
  * <seealso name="Vehicle_SetDimensionsInfo" />
  * <returns>SetVehicleVirtualWorld values.</returns>
 */
-stock void: Vehicle_GetDimensionInfo(vehicleid, &interiorid, &virtualworld) 
+stock Error: Vehicle_GetDimensionInfo(vehicleid, &interiorid, &virtualworld) 
 {
-    interiorid = Vehicle_GetInterior(vehicleid);
-    virtualworld = Vehicle_GetVirtualWorld(vehicleid);
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    Vehicle_GetInterior(vehicleid, interiorid);
+    Vehicle_GetVirtualWorld(vehicleid, virtualworld);
+    return Ok();
 }
 
 // --
 // Occupied state
 // --
 
-stock Vehicle_GetSeatsNumber(vehicleid)
+stock Error: Vehicle_GetSeatsNumber(vehicleid, &output)
 {
-    return ((IsValidVehicle(vehicleid)) ? (GetVehicleSeats(GetVehicleModel(vehicleid))) : -(1));
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = GetVehicleSeats(GetVehicleModel(vehicleid));
+    return Ok();
 }
 
 /**
@@ -3853,9 +4431,14 @@ stock bool: Vehicle_IsOccupied(vehicleid)
  * <returns> Playerid of vehicle last driver. </returns>
 */
 
-stock Vehicle_GetLastDriver(vehicleid)
+stock Error: Vehicle_GetLastDriver(vehicleid, &output)
 {
-    return ((IsValidVehicle(vehicleid)) ? (GetVehicleLastDriver(vehicleid)) : -(1));
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = GetVehicleLastDriver(vehicleid);
+    return Ok();
 }
 
 // --
@@ -3864,16 +4447,23 @@ stock Vehicle_GetLastDriver(vehicleid)
 
 
 /**
-* <summary> Sets the vehicle or groups respawn delay.</summary>
-* <param name="id"> Vehicle or group which we set the delay to.</param>
-* <param name="respawn_delay"> Delay to set.</param>
+ * <summary> Sets the vehicle or groups respawn delay.</summary>
+ * <param name="id"> Vehicle or group which we set the delay to.</param>
+ * <param name="respawn_delay"> Delay to set.</param>
+ * <seealso name="Vehicle_GetRespawnDelay" />
+ * <seealso name="Vehicle_GetOccupiedTime" />
+ * <seealso name="Vehicle_GetRespawnedTime" />
+ * <returns>False if vehicle is invalid, otherwise true.</returns>
 */
-
-stock bool: Vehicle_SetRespawnDelay(VEHICLE_FRAMEWORK_TAGS: id, respawn_delay, tag=tagof(id))
+stock Error: Vehicle_SetRespawnDelay(VEHICLE_FRAMEWORK_TAGS: id, respawn_delay, tag=tagof(id))
 {
     if(tag == tagof(_:))
     {
-        return SetVehicleRespawnDelay(id, respawn_delay)
+        if(!IsValidVehicle(id))
+        {
+            return Error(1, "Invalid vehicle");
+        }
+        SetVehicleRespawnDelay(id, respawn_delay)
     }
     else if(tag == tagof(VehicleGroup:))
     {
@@ -3882,54 +4472,66 @@ stock bool: Vehicle_SetRespawnDelay(VEHICLE_FRAMEWORK_TAGS: id, respawn_delay, t
             SetVehicleRespawnDelay(i, respawn_delay)
         }
     }
-    return true;
+    return Ok();
 }
 
 /**
  * <summary> Gets the vehicle respawn delay.</summary>
  * <param name="vehicleid"> Vehicle we get the delay from.</param>
+ * <seealso name="Vehicle_SetRespawnDelay" />
+ * <seealso name="Vehicle_GetOccupiedTime" />
+ * <seealso name="Vehicle_GetRespawnedTime" />
  * <returns> Respawn delay. -2 if vehicle is invalid</returns>
  */
-
-stock Vehicle_GetRespawnDelay(vehicleid)
+stock Error: Vehicle_GetRespawnDelay(vehicleid, &output)
 {
-    return ((IsValidVehicle(vehicleid)) ? (GetVehicleRespawnDelay(vehicleid)) : -(2));
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle");
+    }
+    output = GetVehicleRespawnDelay(vehicleid);
+    return Ok();
 }
 
 /**
- * <summary> Gets the vehicle occupied time.</summary>
+ * <summary>Gets the vehicle occupied time.</summary>
  * <param name="vehicleid"> Vehicle we get the occupied time from.</param>
- * <returns> -1 if vehicle is not occupied. Else occupied time.</returns>
+ * <seealso name="Vehicle_GetRespawnDelay" />
+ * <seealso name="Vehicle_SetRespawnDelay" />
+ * <seealso name="Vehicle_GetRespawnedTime" />
+ * <returns>-1 if vehicle is not occupied. Else occupied time.</returns>
  */
-
-stock Vehicle_GetOccupiedTime(vehicleid)
+stock Error: Vehicle_GetOccupiedTime(vehicleid, &output)
 {
-    if(Vehicle_IsOccupied(vehicleid) && IsValidVehicle(vehicleid))
+    if(!IsValidVehicle(vehicleid))
     {
-        return ((gettime() - Vehicle_gsOccupiedTick[vehicleid]) * 1000);
+        return Error(1, "Invalid vehicle");
     }
-    return -1;
+    if(!Vehicle_IsOccupied(vehicleid))
+    {
+        return Error(2, "Vehicle is not occupied");
+    }
+    output = ((gettime() - Vehicle_gsOccupiedTick[vehicleid]) * 1000);
+    return Ok();
 }
 
 /**
  * <summary> Gets the vehicle (re)spawned time.</summary>
  * <param name="vehicleid"> Vehicle we get the respawned time from.</param>
+ * <seealso name="Vehicle_GetRespawnDelay" />
+ * <seealso name="Vehicle_GetOccupiedTime" />
+ * <seealso name="Vehicle_SetRespawnDelay" />
  * <returns> Respawned time.</returns>
  */
-
-stock Vehicle_GetRespawnedTime(vehicleid)
+stock Error: Vehicle_GetRespawnedTime(vehicleid, &output)
 {
     if(IsValidVehicle(vehicleid))
     {
-        return ((gettime() - Vehicle_gsRespawnTick[vehicleid]) * 1000);
+        return Error(1, "Invalid vehicle");
     }
-    return -1;
+    output = ((gettime() - Vehicle_gsRespawnTick[vehicleid]) * 1000);
+    return Ok();
 }
-
-// By default, all vehicles have engines. 
-// Bypass: Hook a callback to check if player is riding a manual vehicle (pedal power)
-// and then turn engines on
-// When the player have exited vehicle turn offV
 
 hook OnPlayerStateChange(playerid, PLAYER_STATE:newstate, PLAYER_STATE:oldstate)
 {
@@ -3959,30 +4561,31 @@ hook OnPlayerStateChange(playerid, PLAYER_STATE:newstate, PLAYER_STATE:oldstate)
 */
 stock bool: Vehicle_Respawn(VEHICLE_FRAMEWORK_TAGS: id, tag=tagof(id))
 {
+    new Float:unused;
+
     if(tag == tagof(_:))
     {
         if(!IsValidVehicle(id))
         {
-            return false;
+            return Error(1, "Invalid vehicle");
         }
+        GetVehicleSpawnInfo(id, Vehicle_gsPositionX[id], Vehicle_gsPositionY[id], Vehicle_gsPositionZ[id], unused);
         SetVehicleToRespawn(id);
     }
     else if(tag == tagof(VehicleGroup:))
     {
         foreach(new i : Vehicle_gsGroups[VehicleGroup: id])
         {
+            GetVehicleSpawnInfo(i, Vehicle_gsPositionX[i], Vehicle_gsPositionY[i], Vehicle_gsPositionZ[i], unused);
             SetVehicleToRespawn(i);
         }
     }
-    return true;
+    return Ok();
 }
 
 // --
 // Trailers
 // --
-
-forward OnTrailerHook(vehicleid, trailerid);
-forward OnTrailerUnhook(vehicleid, trailerid);
 
 /**
  * <summary> Attach a trailer to vehicle.</summary>
@@ -3990,14 +4593,22 @@ forward OnTrailerUnhook(vehicleid, trailerid);
  * <param name="trailerid"> Trailer to set.</param>
  * <returns> 0 if function fails, eg. trailerid is equal to vehicleid or vehicle and trailer aren't created, else 1.</param>
 */
-stock bool: Vehicle_AttachTrailer(vehicleid, trailerid)
+stock Error: Vehicle_AttachTrailer(vehicleid, trailerid)
 {
-    if(!IsValidVehicle(vehicleid) || !IsValidVehicle(trailerid) || trailerid == vehicleid)
+    if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle.");
+    }
+    else if(!IsValidVehicle(trailerid))
+    {
+        return Error(2, "Invalid trailer.");
+    }
+    else if(trailerid == vehicleid)
+    {
+        return Error(3, "Trailer can't be same as vehicle");
     }
     AttachTrailerToVehicle(trailerid, vehicleid);
-    return true;
+    return Ok();
 }
 
 /**
@@ -4005,14 +4616,14 @@ stock bool: Vehicle_AttachTrailer(vehicleid, trailerid)
  * <param name="vehicleid"> Vehicle we are detaching the trailer from.</param>
 */
 
-stock bool: Vehicle_DetachTrailer(vehicleid)
+stock Error: Vehicle_DetachTrailer(vehicleid)
 {
     if(!IsValidVehicle(vehicleid))
     {
-        return false;
+        return Error(1, "Invalid vehicle.");
     } 
     DetachTrailerFromVehicle(vehicleid);
-    return true;
+    return Ok();
 }
 
 /**
@@ -4021,9 +4632,14 @@ stock bool: Vehicle_DetachTrailer(vehicleid)
  * <returns> Trailerid. </returns>
 */
 
-stock Vehicle_GetTrailer(vehicleid)
+stock Error: Vehicle_GetTrailer(vehicleid, &output)
 {
-    return GetVehicleTrailer(vehicleid);
+    if(!IsValidVehicle(vehicleid))
+    {
+        return Error(1, "Invalid vehicle.");
+    } 
+    output = GetVehicleTrailer(vehicleid);
+    return Ok();
 }
 
 /**
@@ -4032,9 +4648,14 @@ stock Vehicle_GetTrailer(vehicleid)
  * <returns> Vehicleid. </returns>
 */
 
-stock Vehicle_GetTrailerCab(trailerid)
+stock Error: Vehicle_GetTrailerCab(trailerid, &output)
 {
-    return GetVehicleCab(trailerid);
+    if(!IsValidVehicle(trailerid))
+    {
+        return Error(1, "Invalid trailer.");
+    } 
+    output = GetVehicleCab(trailerid);
+    return Ok();
 }
 
 hook OnVehicleSpawn(vehicleid)
@@ -4077,7 +4698,10 @@ hook OnVehicleDeath(vehicleid, killerid)
         }
         return 1;
     }
-    Vehicle_CancelBlinking(vehicleid);
+    if(Vehicle_IsBlinking(vehicleid))
+    {
+        Vehicle_CancelBlinking(vehicleid);
+    }
     return 1;
 }
 
@@ -4195,7 +4819,6 @@ stock Vehicle_SetColour(VEHICLE_FRAMEWORK_TAGS: id, color1, color2, tag=tagof(id
  * <param name="color1"> First color to get.</param>
  * <param name="color2"> Second color to get.</param>
 */
-
 stock void: Vehicle_GetColour(vehicleid, &color1, &color2) 
 {
     GetVehicleColours(vehicleid, color1, color2);
@@ -4204,8 +4827,6 @@ stock void: Vehicle_GetColour(vehicleid, &color1, &color2)
 // --
 // Paintjob
 // --
-
-forward OnVehiclePaintjobChange(vehicleid, paintjobid);
 
 static const Vehicle_gscPaintjob[] = 
 {
@@ -4229,18 +4850,21 @@ static const Vehicle_gscPaintjob[] =
  * <param name="id"> Vehicle or group which we set the paintjob to.</param>
  * <param name="paintjob"> Paintjob to set.</param>
 */
-
-stock Vehicle_SetPaintjob(VEHICLE_FRAMEWORK_TAGS: id, paintjobid, tag=tagof(id))
+stock Error: Vehicle_SetPaintjob(VEHICLE_FRAMEWORK_TAGS: id, paintjobid, tag=tagof(id))
 {
     if(tag == tagof(_:))
     {
-        if((GetVehicleModel(id) == 483 && (paintjobid != 0 && paintjobid != 3)) || !IsValidVehicle(id)) 
+        if(!IsValidVehicle(id))
         {
-            return 0;
+            return Error(1, "Invalid vehicle.");
+        }
+        if((GetVehicleModel(id) == 483 && (paintjobid != 0 && paintjobid != 3))) 
+        {
+            return Ok(2);
         }
         if(GetVehicleModel(id) == 575 && (paintjobid != 0 && paintjobid != 1 && paintjobid != 3)) 
         {
-            return 0;
+            return Ok(3);
         }
     
         for(new i = 0; i < sizeof(Vehicle_gscPaintjob); i++)
@@ -4279,7 +4903,7 @@ stock Vehicle_SetPaintjob(VEHICLE_FRAMEWORK_TAGS: id, paintjobid, tag=tagof(id))
             }
         }
     }
-    return 1;
+    return Ok();
 }
 
 /**
@@ -4369,7 +4993,7 @@ static Timer: Vehicle_gsHealthTrackTimer[MAX_VEHICLES];
   * <param name="respawn_delay">The time(ms) when the vehicle will be respawned again.</param>
   * <param name="interior">interior id, if you want to create a vehicle inside the building</param>
 */
-stock Vehicle_Create(modelid, Float: x, Float: y, Float: z, Float: rotation, color1, color2, respawn_delay, interior, virtual_world, bool:addsiren=false) 
+stock Vehicle_Create(modelid, Float: x, Float: y, Float: z, Float: rotation, color1, color2, respawn_delay, interior, virtual_world, bool:addsiren=false, bool:compat=false) 
 {
     new idx;
     if(modelid == 537 || modelid == 538)
@@ -4399,10 +5023,20 @@ stock Vehicle_Create(modelid, Float: x, Float: y, Float: z, Float: rotation, col
     Vehicle_gsPositionY[idx] = y;
     Vehicle_gsPositionZ[idx] = z;
 
-    Vehicle_gsWindows[idx][0] = VEHICLE_WINDOW_CLOSED;
-    Vehicle_gsWindows[idx][1] = VEHICLE_WINDOW_CLOSED;
-    Vehicle_gsWindows[idx][2] = VEHICLE_WINDOW_CLOSED;
-    Vehicle_gsWindows[idx][3] = VEHICLE_WINDOW_CLOSED;
+    if(compat)
+    {
+        Vehicle_gsWindows[idx][0] = VEHICLE_WINDOW_NOT_SET;
+        Vehicle_gsWindows[idx][1] = VEHICLE_WINDOW_NOT_SET;
+        Vehicle_gsWindows[idx][2] = VEHICLE_WINDOW_NOT_SET;
+        Vehicle_gsWindows[idx][3] = VEHICLE_WINDOW_NOT_SET;
+    }
+    else
+    {
+        Vehicle_gsWindows[idx][0] = VEHICLE_WINDOW_CLOSED;
+        Vehicle_gsWindows[idx][1] = VEHICLE_WINDOW_CLOSED;
+        Vehicle_gsWindows[idx][2] = VEHICLE_WINDOW_CLOSED;
+        Vehicle_gsWindows[idx][3] = VEHICLE_WINDOW_CLOSED;
+    }
 
     Vehicle_gsFuelTankCapacity[idx] = -1;
     Vehicle_gsFuelTankLevel[idx] = -1;
@@ -4488,9 +5122,10 @@ stock Vehicle_CreateEx(modelid, Float: x, Float: y, Float: z, Float: rotation, c
 
 /**
  * <summary> Destroys vehicle. </summary>
+ * <remarks>You should not touch compat param.</remarks>
 */
 
-stock bool: Vehicle_Destroy(idx)
+stock bool: Vehicle_Destroy(idx, bool: compat = false)
 {
     if(!IsValidVehicle(idx)) 
     {
@@ -4503,11 +5138,28 @@ stock bool: Vehicle_Destroy(idx)
     Vehicle_gsPositionY[idx] = 0.0;
     Vehicle_gsPositionZ[idx] = 0.0;
 
-    Vehicle_gsWindows[idx][0] = VEHICLE_WINDOW_CLOSED;
-    Vehicle_gsWindows[idx][1] = VEHICLE_WINDOW_CLOSED;
-    Vehicle_gsWindows[idx][2] = VEHICLE_WINDOW_CLOSED;
-    Vehicle_gsWindows[idx][3] = VEHICLE_WINDOW_CLOSED;
-    
+    Vehicle_gsParams[idx][PARAMS_ENGINE] = VEHICLE_PARAMS_OFF;
+    Vehicle_gsParams[idx][PARAMS_LIGHTS] = VEHICLE_PARAMS_OFF;
+    Vehicle_gsParams[idx][PARAMS_BONNET] = VEHICLE_PARAMS_OFF;
+    Vehicle_gsParams[idx][PARAMS_BOOT] = VEHICLE_PARAMS_OFF;
+    Vehicle_gsParams[idx][PARAMS_ALARM] = VEHICLE_PARAMS_OFF;
+    Vehicle_gsParams[idx][PARAMS_DOORS] = VEHICLE_PARAMS_OFF;
+    Vehicle_gsParams[idx][PARAMS_OBJECTIVE] = VEHICLE_PARAMS_OFF;
+
+    if(compat)
+    {
+        Vehicle_gsWindows[idx][0] = VEHICLE_WINDOW_NOT_SET;
+        Vehicle_gsWindows[idx][1] = VEHICLE_WINDOW_NOT_SET;
+        Vehicle_gsWindows[idx][2] = VEHICLE_WINDOW_NOT_SET;
+        Vehicle_gsWindows[idx][3] = VEHICLE_WINDOW_NOT_SET;
+    }
+    else
+    {
+        Vehicle_gsWindows[idx][0] = VEHICLE_WINDOW_CLOSED;
+        Vehicle_gsWindows[idx][1] = VEHICLE_WINDOW_CLOSED;
+        Vehicle_gsWindows[idx][2] = VEHICLE_WINDOW_CLOSED;
+        Vehicle_gsWindows[idx][3] = VEHICLE_WINDOW_CLOSED;
+    }
     Vehicle_gsBlinkSide[idx] = VEHICLE_BLINKERS_NOT_SET;
     foreach(new i : Vehicle_gsActGps)
     {
@@ -4522,5 +5174,110 @@ stock bool: Vehicle_Destroy(idx)
     DestroyVehicle(idx);
     return true;
 }
+
+// --
+// Compat
+// --
+
+#if defined VEHICLE_PLUS_SAMP_COMPAT
+    #define IsVehicleBlinking           Vehicle_IsBlinking
+    #define SetVehicleBlinking          Vehicle_SetBlinking
+    #define CancelVehicleBlinking       Vehicle_CancelBlinking
+    #define GetVehicleEngineState       Vehicle_GetEngineState
+    #define SetVehicleEngineState       Vehicle_SetEngineState
+    #define TryTurningVehicleEngine     Vehicle_TryTurningEngine
+    #define GetVehicleDriveType         Vehicle_GetDriveType
+    #define GetVehicleEngineType        Vehicle_GetEngineType
+    #define GetVehicleBootState         Vehicle_GetBootState
+    #define SetVehicleBootState         Vehicle_SetBootState
+    #define GetVehicleBonnetState       Vehicle_GetBonnetState
+    #define SetVehicleBonnetState       Vehicle_SetBonnetState
+    #define GetVehicleObjectiveState    Vehicle_GetObjectiveState
+    #define SetVehicleObjectiveState    Vehicle_SetObjectiveState
+    #define GetVehicleLightsNumber      Vehicle_GetLightsNumber
+    #define SetVehicleLightsConditionEx Vehicle_SetLightsConditionEx
+    #define SetVehicleLightsCondition   Vehicle_SetLightsCondition
+    #define GetVehicleLightsCondition   Vehicle_GetLightsCondition
+    #define GetVehicleLightsConditionEx Vehicle_GetLightsConditionEx
+    #define SetVehicleLightsState       Vehicle_SetLightsState
+    #define GetVehicleLightsState       Vehicle_GetLightsState
+    #define SetVehicleAlarms            Vehicle_SetAlarms
+    #define GetVehicleAlarms            Vehicle_GetAlarms
+    #define GetVehicleWindowsNumber     Vehicle_GetWindowsNumber
+    #define SetVehicleWindows           Vehicle_SetWindows
+    #define GetVehicleWindows           Vehicle_GetWindows
+    #define SetVehicleWindowsEx         Vehicle_SetWindowsEx
+    #define GetVehicleWindowsEx         Vehicle_GetWindowsEx
+    #define SetVehicleTyrePoppingGlobal Vehicle_SetTyrePoppingGlobal
+    #define GetVehicleTyrePoppingGlobal Vehicle_GetTyrePoppingGlobal
+    #define SetVehicleTyreCondition     Vehicle_SetTyreCondition
+    #define GetVehicleTyreCondition     Vehicle_GetTyreCondition
+    #define SetVehicleTyreConditionEx   Vehicle_SetTyreConditionEx
+    #define GetVehicleTyreConditionEx   Vehicle_GetTyreConditionEx
+    #define SetVehicleDoorCondition     Vehicle_SetDoorCondition
+    #define GetVehicleDoorCondition     Vehicle_GetDoorCondition
+    #define SetVehicleDoorConditionEx   Vehicle_SetDoorConditionEx
+    #define GetVehicleDoorConditionEx   Vehicle_GetDoorConditionEx
+    #define GetVehicleDoorsLocked       Vehicle_GetDoorsLocked
+    #define SetVehicleDoorsLocked       Vehicle_SetDoorsLocked
+    #define SetVehiclePanelsCondition   Vehicle_SetPanelsCondition
+    #define GetVehiclePanelsCondition   Vehicle_GetPanelsCondition
+    #define SetVehiclePanelsConditionEx Vehicle_SetPanelsConditionEx
+    #define GetVehiclePanelsConditionEx Vehicle_GetPanelsConditionEx
+    #define GetVehicleComponentName     Vehicle_GetComponentName
+    #define CanVehicleHaveComponent     Vehicle_CanHaveComponent
+    #define SetVehicleFuelTankCapacity  Vehicle_SetFuelTankCapacity
+    #define SetVehicleFuelLevel         Vehicle_SetFuelLevel
+    #define SetVehicleFuelConsumption   Vehicle_SetFuelConsumption
+    #define GetVehicleFuelTankCapacity  Vehicle_GetFuelTankCapacity
+    #define GetVehicleFuelLevel         Vehicle_GetFuelLevel
+    #define GetVehicleFuelConsumption   Vehicle_GetFuelConsumption
+    #define GetDistanceVehicleCanPass   Vehicle_GetDistanceCanPass
+    #define GetVehicleDistanceFromLastRefill Vehicle_GetDistanceFromLastRefill
+    #define GetVehicleDistanceTravelled Vehicle_GetDistanceTravelled
+    #define SetVehicleDistanceTravelled Vehicle_SetDistanceTravelled
+    #define SetVehicleDimensionInfo     Vehicle_SetDimensionInfo
+    #define GetVehicleDimensionInfo     Vehicle_GetDimensionInfo
+    #define GetVehicleOccupiedTime      Vehicle_GetOccupiedTime
+    #define GetVehicleRespawnedTime     Vehicle_GetRespawnedTime
+
+    hook function SetVehicleHealth(vehicleid, Float:health)
+    {
+        Vehicle_gsHealth[vehicleid] = health;
+        return continue(vehicleid, health);
+    }
+
+    hook function GetVehicleHealth(vehicleid, &Float:health)
+    {
+        health = Vehicle_gsHealth[vehicleid];
+        return continue(vehicleid, health);
+    }
+    stock __FRAMEWORK_CreateVehicle__(vehicletype, Float:x, Float:y, Float:z, Float:rotation, color1, color2, respawn_delay, addsiren=false)
+    {
+        return Vehicle_Create(vehicletype, x, y, z, rotation, color1, color2, respawn_delay, 0, 0, addsiren, true);
+    }
+
+    #if defined _ALS_CreateVehicle
+        #undef CreateVehicle
+    #else
+        #define _ALS_CreateVehicle
+    #endif
+
+    #define CreateVehicle __FRAMEWORK_CreateVehicle__
+
+    stock __FRAMEWORK_DeleteVehicle__(vidx)
+    {
+        return Vehicle_Destroy(vidx, true);
+    }
+
+    #if defined _ALS_DestroyVehicle
+        #undef DestroyVehicle
+    #else
+        #define _ALS_DestroyVehicle
+    #endif
+
+    #define DestroyVehicle __FRAMEWORK_DeleteVehicle__
+
+#endif
 
 #pragma warning pop
