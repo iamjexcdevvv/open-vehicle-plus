@@ -3571,6 +3571,8 @@ static
     Float: Vehicle_gsDistanceTravelledTotalMiles[MAX_VEHICLES],
     Float: Vehicle_gsDistanceTravelledTotalKilometres[MAX_VEHICLES];
 
+static Vehicle_gsVehicleIdleTime[MAX_VEHICLES];
+
 forward OnVehicleDrivenDistanceUpdate(vehicleid);
 
 // If we don't hook this, vehicle distance travelled will go skyhigh when teleported far away
@@ -3601,7 +3603,7 @@ stock timer __Vehicle_DistanceTravelled[1000](vehicleid)
                     Vehicle_gsKilometersToEmpty[vehicleid] -= distance / 1000;
                     Vehicle_gsDistanceFromLastRefill[vehicleid] += distance / 1000;
                 }
-                else if(Vehicle_gsFuelTankLevel[vehicleid] <= 0)
+                else
                 {
                     Vehicle_SetEngineState(vehicleid, VEHICLE_PARAMS_OFF);
                     Vehicle_gsFuelTankLevel[vehicleid] = 0;
@@ -3612,6 +3614,20 @@ stock timer __Vehicle_DistanceTravelled[1000](vehicleid)
 
         CallLocalFunction("OnVehicleDrivenDistanceUpdate", "i", vehicleid);
         GetVehiclePos(vehicleid, Vehicle_gsPositionX[vehicleid], Vehicle_gsPositionY[vehicleid], Vehicle_gsPositionZ[vehicleid]);
+    }
+    else {
+        new VEHICLE_PARAMS: params;
+        Vehicle_GetEngineState(vehicleid, params);
+
+        if(params == VEHICLE_PARAMS_ON) {
+            if (Vehicle_gsVehicleIdleTime[vehicleid] == 0) {
+                Vehicle_gsVehicleIdleTime[vehicleid] = gettime();
+            }
+            else {
+                new seconds = (gettime() - Vehicle_gsVehicleIdleTime[vehicleid]);
+                Vehicle_gsFuelTankLevel[vehicleid] -= (Vehicle_gsFuelConsumption[vehicleid] / 100) * seconds;
+            }
+        }
     }
 }
 
